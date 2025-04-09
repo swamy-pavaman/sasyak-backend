@@ -5,6 +5,7 @@ import com.kapilagro.sasyak.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -82,8 +83,13 @@ public class UserService {
     }
 
     // Get users by tenant ID and role
-    public List<User> getUsersByTenantAndRole(UUID  tenantId, String role) {
+    public List<User> getUsersByTenantAndRole(UUID tenantId, String role) {
         return userRepo.getUsersByTenantAndRole(tenantId, role);
+    }
+
+    // New method: Get paginated users by tenant ID and role
+    public List<User> getPagedUsersByTenantAndRole(UUID tenantId, String role, int page, int size) {
+        return userRepo.getPagedUsersByTenantAndRole(tenantId, role, page, size);
     }
 
     // Get managers and supervisors for a specific tenant
@@ -92,10 +98,10 @@ public class UserService {
     }
 
     // Check if a user belongs to a specific tenant
-    public boolean isUserInTenant(int userId, UUID  tenantId) {
+    public boolean isUserInTenant(int userId, UUID tenantId) {
         Optional<User> user = getUserById(userId);
 
-        return user.isPresent() && user.get().getTenantId() != null && user.get().getTenantId() == tenantId;
+        return user.isPresent() && user.get().getTenantId() != null && user.get().getTenantId().equals(tenantId);
     }
 
     // Create a new employee for a tenant
@@ -110,5 +116,11 @@ public class UserService {
 
         // Register the user
         return registerUser(employee);
+    }
+
+    // New method: Delete a user by ID
+    @Transactional
+    public boolean deleteUser(int userId) {
+        return userRepo.deleteById(userId);
     }
 }

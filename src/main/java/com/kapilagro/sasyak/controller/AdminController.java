@@ -5,6 +5,9 @@ import com.kapilagro.sasyak.services.AdminService;
 import com.kapilagro.sasyak.services.EmailService;
 import com.kapilagro.sasyak.utils.GeneratePasswordUtility;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -134,6 +137,104 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new GetEmployeesResponse());
+        }
+    }
+
+    // New endpoint for paginated managers
+    @GetMapping("/managers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PagedEmployeesResponse> getManagers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+
+            // Get paged managers
+            Page<User> managersPage = adminService.getPagedManagers(tenantId, PageRequest.of(page, size));
+
+            System.out.println("tenantId   re  "+tenantId);
+
+            // Map to DTOs
+            List<GetEmployeesResponse.EmployeeDTO> managerDTOs = managersPage.getContent().stream()
+                    .map(manager -> GetEmployeesResponse.EmployeeDTO.builder()
+                            .id(manager.getUserId())
+                            .name(manager.getName())
+                            .email(manager.getEmail())
+                            .role(manager.getRole())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Build paged response
+            PagedEmployeesResponse response = PagedEmployeesResponse.builder()
+                    .employees(managerDTOs)
+                    .totalItems(managersPage.getTotalElements())
+                    .totalPages(managersPage.getTotalPages())
+                    .currentPage(managersPage.getNumber())
+                    .build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new PagedEmployeesResponse());
+        }
+    }
+
+    // New endpoint for paginated supervisors
+    @GetMapping("/supervisors")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PagedEmployeesResponse> getSupervisors(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+
+            // Get paged supervisors
+            Page<User> supervisorsPage = adminService.getPagedSupervisors(tenantId, PageRequest.of(page, size));
+
+            // Map to DTOs
+            List<GetEmployeesResponse.EmployeeDTO> supervisorDTOs = supervisorsPage.getContent().stream()
+                    .map(supervisor -> GetEmployeesResponse.EmployeeDTO.builder()
+                            .id(supervisor.getUserId())
+                            .name(supervisor.getName())
+                            .email(supervisor.getEmail())
+                            .role(supervisor.getRole())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Build paged response
+            PagedEmployeesResponse response = PagedEmployeesResponse.builder()
+                    .employees(supervisorDTOs)
+                    .totalItems(supervisorsPage.getTotalElements())
+                    .totalPages(supervisorsPage.getTotalPages())
+                    .currentPage(supervisorsPage.getNumber())
+                    .build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new PagedEmployeesResponse());
+        }
+    }
+
+    // New endpoint to delete an employee
+    @DeleteMapping("/employees/{employeeId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteEmployee(@PathVariable int employeeId) {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+
+            // Check if the employee exists and belongs to the tenant
+            boolean deleted = adminService.deleteEmployee(employeeId, tenantId);
+
+            if (deleted) {
+                return ResponseEntity.ok("Employee deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Employee not found or does not belong to your tenant");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting employee: " + e.getMessage());
         }
     }
 }

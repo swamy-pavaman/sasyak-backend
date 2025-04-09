@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -33,7 +34,7 @@ public class UserRepo {
 
         // Check if tenant_id column is present in the result set
         try {
-            UUID  tenantId = UUID.fromString(rs.getString("tenant_id"));
+            UUID tenantId = UUID.fromString(rs.getString("tenant_id"));
             if (!rs.wasNull()) {
                 user.setTenantId(tenantId);
             }
@@ -64,7 +65,7 @@ public class UserRepo {
     }
 
     public int save(User user) {
-        String query = "INSERT INTO users (name, email, password, role, tenant_id,phone_number) VALUES (?, ?, ?, ?, ?,?)";
+        String query = "INSERT INTO users (name, email, password, role, tenant_id, phone_number) VALUES (?, ?, ?, ?, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -80,8 +81,7 @@ public class UserRepo {
             } else {
                 ps.setNull(5, java.sql.Types.OTHER);
             }
-            ps.setString(6,user.getPhone_number());
-
+            ps.setString(6, user.getPhone_number());
 
             return ps;
         }, keyHolder);
@@ -106,6 +106,13 @@ public class UserRepo {
         return template.query(query, userRowMapper, tenantId, role);
     }
 
+    // New method: Get paginated users by tenant ID and role with offset/limit for pagination
+    public List<User> getPagedUsersByTenantAndRole(UUID tenantId, String role, int page, int size) {
+        String query = "SELECT * FROM users WHERE tenant_id = ? AND role = ? ORDER BY name LIMIT ? OFFSET ?";
+        int offset = page * size;
+        return template.query(query, userRowMapper, tenantId, role, size, offset);
+    }
+
     public List<User> getUsersByTenant(int tenantId) {
         String query = "SELECT * FROM users WHERE tenant_id = ?";
         return template.query(query, userRowMapper, tenantId);
@@ -123,5 +130,13 @@ public class UserRepo {
         }
 
         return template.query(query, userRowMapper, params);
+    }
+
+    // New method: Delete a user by ID
+    @Transactional
+    public boolean deleteById(int userId) {
+        String query = "DELETE FROM users WHERE user_id = ?";
+        int rowsAffected = template.update(query, userId);
+        return rowsAffected > 0;
     }
 }
