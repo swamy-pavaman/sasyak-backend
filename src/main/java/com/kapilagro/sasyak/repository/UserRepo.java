@@ -64,7 +64,7 @@ public class UserRepo {
     }
 
     public int save(User user) {
-        String query = "INSERT INTO users (name, email, password, role, tenant_id) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO users (name, email, password, role, tenant_id,phone_number) VALUES (?, ?, ?, ?, ?,?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -74,11 +74,13 @@ public class UserRepo {
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getPassword());
             ps.setString(4, user.getRole());
+
             if (user.getTenantId() != null) {
                 ps.setObject(5, user.getTenantId(), java.sql.Types.OTHER); // UUID
             } else {
                 ps.setNull(5, java.sql.Types.OTHER);
             }
+            ps.setString(6,user.getPhone_number());
 
 
             return ps;

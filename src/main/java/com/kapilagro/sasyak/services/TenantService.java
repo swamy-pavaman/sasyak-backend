@@ -3,6 +3,7 @@ package com.kapilagro.sasyak.services;
 import com.kapilagro.sasyak.model.Tenant;
 import com.kapilagro.sasyak.model.User;
 import com.kapilagro.sasyak.repository.TenantRepo;
+import com.kapilagro.sasyak.utils.GeneratePasswordUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,9 @@ public class TenantService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private GeneratePasswordUtility generateRandomPassword;
 
     /**
      * Get all tenants
@@ -56,7 +60,7 @@ public class TenantService {
         tenant.setTenantId(tenantId);
 
         // Generate a random password for the admin
-        String generatedPassword = generateRandomPassword();
+        String generatedPassword = generateRandomPassword.generateRandomPassword();
         String rawPassword = generatedPassword;
 
         // Set up the admin user
@@ -110,38 +114,38 @@ public class TenantService {
 
     /**
      * Generate a random secure password
-     */
-    private String generateRandomPassword() {
-        String upperCaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String lowerCaseLetters = "abcdefghijklmnopqrstuvwxyz";
-        String numbers = "0123456789";
-        String specialCharacters = "!@#$%^&*()-_=+[]{}|;:,.<>?";
-
-        String allChars = upperCaseLetters + lowerCaseLetters + numbers + specialCharacters;
-        Random random = new Random();
-
-        // Generate a password of length 12
-        char[] password = new char[12];
-
-        // Ensure at least one character from each category
-        password[0] = upperCaseLetters.charAt(random.nextInt(upperCaseLetters.length()));
-        password[1] = lowerCaseLetters.charAt(random.nextInt(lowerCaseLetters.length()));
-        password[2] = numbers.charAt(random.nextInt(numbers.length()));
-        password[3] = specialCharacters.charAt(random.nextInt(specialCharacters.length()));
-
-        // Fill the rest randomly
-        for (int i = 4; i < 12; i++) {
-            password[i] = allChars.charAt(random.nextInt(allChars.length()));
-        }
-
-        // Shuffle the password characters
-        for (int i = 0; i < password.length; i++) {
-            int j = random.nextInt(password.length);
-            char temp = password[i];
-            password[i] = password[j];
-            password[j] = temp;
-        }
-
-        return new String(password);
-    }
+//     */
+//    private String generateRandomPassword() {
+//        String upperCaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+//        String lowerCaseLetters = "abcdefghijklmnopqrstuvwxyz";
+//        String numbers = "0123456789";
+//        String specialCharacters = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+//
+//        String allChars = upperCaseLetters + lowerCaseLetters + numbers + specialCharacters;
+//        Random random = new Random();
+//
+//        // Generate a password of length 12
+//        char[] password = new char[12];
+//
+//        // Ensure at least one character from each category
+//        password[0] = upperCaseLetters.charAt(random.nextInt(upperCaseLetters.length()));
+//        password[1] = lowerCaseLetters.charAt(random.nextInt(lowerCaseLetters.length()));
+//        password[2] = numbers.charAt(random.nextInt(numbers.length()));
+//        password[3] = specialCharacters.charAt(random.nextInt(specialCharacters.length()));
+//
+//        // Fill the rest randomly
+//        for (int i = 4; i < 12; i++) {
+//            password[i] = allChars.charAt(random.nextInt(allChars.length()));
+//        }
+//
+//        // Shuffle the password characters
+//        for (int i = 0; i < password.length; i++) {
+//            int j = random.nextInt(password.length);
+//            char temp = password[i];
+//            password[i] = password[j];
+//            password[j] = temp;
+//        }
+//
+//        return new String(password);
+//    }
 }

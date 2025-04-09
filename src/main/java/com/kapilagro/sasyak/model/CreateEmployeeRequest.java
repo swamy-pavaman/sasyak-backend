@@ -12,7 +12,8 @@ import lombok.NoArgsConstructor;
 public class CreateEmployeeRequest {
     private String name;
     private String email;
-    private String password;
-    private String number;
+    //private String password;
+    private String phone_number;
+    private String companyName;
     private String role; // EMPLOYEE, MANAGER, SUPERVISOR
 }

@@ -16,7 +16,7 @@ public class User {
     private int userId;
     private String name;
     private String email;
-    private String number;
+    private String phone_number;
     private String role; // "SUPER_ADMIN", "ADMIN", "MANAGER", "SUPERVISOR", "EMPLOYEE"
     private String password;
 //    private String oauthProvider;
