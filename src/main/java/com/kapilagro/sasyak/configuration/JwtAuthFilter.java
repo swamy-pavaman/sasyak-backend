@@ -1,6 +1,8 @@
 package com.kapilagro.sasyak.configuration;
 
+import com.kapilagro.sasyak.model.User;
 import com.kapilagro.sasyak.services.MyUserDetailsService;
+import com.kapilagro.sasyak.services.MyUserPrincipal;
 import com.kapilagro.sasyak.utils.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -49,11 +51,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtUtil.validateToken(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
+                    // Create authentication token with user principal
+                    UsernamePasswordAuthenticationToken authToken;
+
+                    // If userDetails is our custom MyUserPrincipal, include the User object
+                    if (userDetails instanceof MyUserPrincipal) {
+                        User user = ((MyUserPrincipal) userDetails).getUser();
+                        authToken = new UsernamePasswordAuthenticationToken(
+                                user, // Store the full User object as the principal
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                    } else {
+                        authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                    }
+
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }

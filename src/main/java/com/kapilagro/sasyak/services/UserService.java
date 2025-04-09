@@ -6,7 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -16,28 +19,22 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
-
-
     // Constructor injection instead of field injection
     public UserService(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
-
-        // Initialize with a test user
-
     }
 
     public User getUserByUserEmail(String email) {
-
-       return userRepo.getUserByEmail(email);
+        return userRepo.getUserByEmail(email);
     }
 
-    public User registerUser(User user) {
-//        // Generate a unique user ID in a real application
-//        if (user.getUserId() == null) {
-//            user.setUserId(userDatabase.size() + 1);
-//        }
+    public User getSuperAdminByEmail(String email) {
+        return userRepo.getSuperAdminByEmail(email);
+    }
 
-        // Set default role if not provided TODO add default behavior of role in db
+    // This method registers a user and returns the user with ID
+    public User registerUser(User user) {
+        // Set default role if not provided
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         }
@@ -46,10 +43,23 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         // Save to database
-        int userId=userRepo.save(user);
-//        userDatabase.put(user.getEmail(), user);
+        int userId = userRepo.save(user);
         user.setUserId(userId);
         return user;
+    }
+
+    // This method is similar to registerUser but doesn't encode the password
+    // It's used when the password is already encoded
+    public int registerUserWithoutAuthentication(User user) {
+        // Set default role if not provided
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("USER");
+        }
+
+        // Save to database
+        int userId = userRepo.save(user);
+        user.setUserId(userId);
+        return userId;
     }
 
     // For development purposes, set the encoded password for the test user
@@ -62,8 +72,43 @@ public class UserService {
         }
     }
 
-
     public Optional<User> getUserById(int id) {
-       return userRepo.getUserById(id);
+        return userRepo.getUserById(id);
+    }
+
+    // Get users by tenant ID
+    public List<User> getUsersByTenant(int tenantId) {
+        return userRepo.getUsersByTenant(tenantId);
+    }
+
+    // Get users by tenant ID and role
+    public List<User> getUsersByTenantAndRole(UUID  tenantId, String role) {
+        return userRepo.getUsersByTenantAndRole(tenantId, role);
+    }
+
+    // Get managers and supervisors for a specific tenant
+    public List<User> getManagersAndSupervisors(UUID tenantId) {
+        return userRepo.getUsersByTenantAndRoles(tenantId, Arrays.asList("MANAGER", "SUPERVISOR"));
+    }
+
+    // Check if a user belongs to a specific tenant
+    public boolean isUserInTenant(int userId, UUID  tenantId) {
+        Optional<User> user = getUserById(userId);
+
+        return user.isPresent() && user.get().getTenantId() != null && user.get().getTenantId() == tenantId;
+    }
+
+    // Create a new employee for a tenant
+    public User createEmployee(User employee, UUID tenantId) {
+        // Set tenant ID
+        employee.setTenantId(tenantId);
+
+        // Set role to EMPLOYEE if not specified
+        if (employee.getRole() == null || employee.getRole().isEmpty()) {
+            employee.setRole("EMPLOYEE");
+        }
+
+        // Register the user
+        return registerUser(employee);
     }
 }

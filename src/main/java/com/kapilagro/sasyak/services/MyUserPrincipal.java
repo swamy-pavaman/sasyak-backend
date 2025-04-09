@@ -28,33 +28,39 @@ public class MyUserPrincipal implements UserDetails {
 
     @Override
     public String getPassword() {
+
+        System.out.println("user password "+this.user.getPassword());
         return this.user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        // Make sure this matches what you're using to look up the user
-        // If you're looking up by email, return email instead
-        return this.user.getEmail(); // Changed from getName() to getEmail()
+        // Using email as the username
+        return this.user.getEmail();
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return true; // Explicitly return true
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true; // Explicitly return true
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true; // Explicitly return true
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return true; // Explicitly return true
+        return true;
+    }
+
+    // Add method to get the underlying user
+    public User getUser() {
+        return this.user;
     }
 }

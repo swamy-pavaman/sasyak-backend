@@ -8,13 +8,13 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import java.util.UUID;
 
 @Repository
 public class UserRepo {
@@ -22,39 +22,49 @@ public class UserRepo {
     @Autowired
     JdbcTemplate template;
 
+    private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
+        User user = new User();
+        user.setUserId((int) rs.getLong("user_id"));
+        user.setName(rs.getString("name"));
+        user.setEmail(rs.getString("email"));
+        user.setPassword(rs.getString("password"));
+        // TODO add manager id also here
+        user.setRole(rs.getString("role"));
+
+        // Check if tenant_id column is present in the result set
+        try {
+            UUID  tenantId = UUID.fromString(rs.getString("tenant_id"));
+            if (!rs.wasNull()) {
+                user.setTenantId(tenantId);
+            }
+        } catch (Exception e) {
+            // No tenant_id column or it's null
+            user.setTenantId(null);
+        }
+
+        return user;
+    };
+
     public User getUserByEmail(String email) {
         String query = "SELECT * FROM users WHERE email = ?";
         try {
-            return template.queryForObject(query, new Object[]{email}, (rs, rowNum) -> {
-                User user = new User();
-                user.setUserId((int) rs.getLong("user_id"));
-                user.setName(rs.getString("name"));
-                user.setEmail(rs.getString("email"));
-                user.setPassword(rs.getString("password"));
-                user.setOauthProvider(rs.getString("oauth_provider"));
-                user.setOAuthProviderId(rs.getString("oauth_provider_id"));
-                user.setRole(rs.getString("role"));
-                return user;
-            });
+            return template.queryForObject(query, new Object[]{email}, userRowMapper);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
-//    public void save(User user) {
-//        String query = "INSERT INTO users (name, email, password, oauth_provider, oauth_provider_id, role) VALUES (?, ?, ?, ?, ?, ?)";
-//        template.update(query,
-//                user.getName(),
-//                user.getEmail(),
-//                user.getPassword(),
-//                user.getOauthProvider(),
-//                user.getOAuthProviderId(),
-//                user.getRole()
-//        );
-//    }
+    public User getSuperAdminByEmail(String email) {
+        String query = "SELECT * FROM users WHERE email = ? AND role = 'SUPER_ADMIN'";
+        try {
+            return template.queryForObject(query, new Object[]{email}, userRowMapper);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
 
     public int save(User user) {
-        String query = "INSERT INTO users (name, email, password, oauth_provider, oauth_provider_id, role) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO users (name, email, password, role, tenant_id) VALUES (?, ?, ?, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -63,16 +73,20 @@ public class UserRepo {
             ps.setString(1, user.getName());
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getPassword());
-            ps.setString(4, user.getOauthProvider());
-            ps.setString(5, user.getOAuthProviderId());
-            ps.setString(6, user.getRole());
+            ps.setString(4, user.getRole());
+            if (user.getTenantId() != null) {
+                ps.setObject(5, user.getTenantId(), java.sql.Types.OTHER); // UUID
+            } else {
+                ps.setNull(5, java.sql.Types.OTHER);
+            }
+
+
             return ps;
         }, keyHolder);
 
-        // Correct way: Extracting user_id from getKeys()
         Map<String, Object> keys = keyHolder.getKeys();
         if (keys != null) {
-            return (int) keys.get("user_id");  // Extract user_id safely
+            return (int) keys.get("user_id");
         } else {
             throw new IllegalStateException("Failed to retrieve user_id after insertion.");
         }
@@ -80,18 +94,32 @@ public class UserRepo {
 
     public Optional<User> getUserById(int id) {
         String query = "SELECT * FROM users WHERE user_id = ?";
-        RowMapper<User> rowMapper = (rs, rowNum) -> {
-            User user=User.builder()
-                    .userId(rs.getInt("user_id"))
-                    .name(rs.getString("name"))
-                    .email(rs.getString("email"))
-                    .role(rs.getString("role"))
-                    .build();
-            return user;
-        };
-
-        return template.query(query, rowMapper, id)
+        return template.query(query, userRowMapper, id)
                 .stream()
-                .findFirst(); // Return Optional<User>
+                .findFirst();
+    }
+
+    public List<User> getUsersByTenantAndRole(UUID tenantId, String role) {
+        String query = "SELECT * FROM users WHERE tenant_id = ? AND role = ?";
+        return template.query(query, userRowMapper, tenantId, role);
+    }
+
+    public List<User> getUsersByTenant(int tenantId) {
+        String query = "SELECT * FROM users WHERE tenant_id = ?";
+        return template.query(query, userRowMapper, tenantId);
+    }
+
+    // Method to get users by a specific tenant with roles in the provided list
+    public List<User> getUsersByTenantAndRoles(UUID tenantId, List<String> roles) {
+        String inSql = String.join(",", java.util.Collections.nCopies(roles.size(), "?"));
+        String query = String.format("SELECT * FROM users WHERE tenant_id = ? AND role IN (%s)", inSql);
+
+        Object[] params = new Object[roles.size() + 1];
+        params[0] = tenantId;
+        for (int i = 0; i < roles.size(); i++) {
+            params[i + 1] = roles.get(i);
+        }
+
+        return template.query(query, userRowMapper, params);
     }
 }

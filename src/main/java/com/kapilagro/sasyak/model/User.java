@@ -3,6 +3,8 @@ package com.kapilagro.sasyak.model;
 import lombok.*;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -11,16 +13,14 @@ import org.springframework.stereotype.Component;
 @Setter
 @Builder
 public class User {
-
-    int userId;
-    String name;
-    String email;
-    String number;
-    String role;
-    String password;
-    String oauthProvider;
-    String oAuthProviderId;
-
-
-
+    private int userId;
+    private String name;
+    private String email;
+    private String number;
+    private String role; // "SUPER_ADMIN", "ADMIN", "MANAGER", "SUPERVISOR", "EMPLOYEE"
+    private String password;
+//    private String oauthProvider;
+//    private String oAuthProviderId;
+    private UUID tenantId; // New field to link user to a tenant
+    private Integer managerId;
 }
