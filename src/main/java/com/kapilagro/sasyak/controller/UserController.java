@@ -41,42 +41,49 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getMe() {
         try {
-            // Get authentication
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
             }
 
-            // Get the authenticated user's email/username
-            String username = authentication.getName();
+            // Check if the principal is a User object directly
+            if (authentication.getPrincipal() instanceof User) {
+                User user = (User) authentication.getPrincipal();
 
-            // Fetch user from database using ONLY the authenticated username
-            // This ensures users can only access their own information
-            User user = userService.getUserByUserEmail(username);
-            System.out.println(username);
-
-            if (user != null) {
                 UserDTO userDTO = UserDTO.builder()
                         .id(user.getUserId())
                         .name(user.getName())
                         .email(user.getEmail())
                         .role(user.getRole())
                         .tenantId(user.getTenantId())
-                        .tenantId(user.getTenantId())
                         .build();
 
                 return ResponseEntity.ok(userDTO);
+            } else {
+                // Fallback to username lookup if principal isn't a User
+                String username = authentication.getName();
+                User user = userService.getUserByUserEmail(username);
+
+                if (user != null) {
+                    UserDTO userDTO = UserDTO.builder()
+                            .id(user.getUserId())
+                            .name(user.getName())
+                            .email(user.getEmail())
+                            .role(user.getRole())
+                            .tenantId(user.getTenantId())
+                            .build();
+
+                    return ResponseEntity.ok(userDTO);
+                }
             }
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found here");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (Exception e) {
-            //logger.error("Error retrieving user information", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error retrieving user information");
         }
     }
-
     // New CRUD operations for users
 
     @PostMapping

@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/api/manager/users")
-@PreAuthorize("hasRole('MANAGER')")
+@PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
 public class UserManagerController {
 
     @Autowired
@@ -77,6 +77,7 @@ public class UserManagerController {
 
     // Get supervisors from the manager's tenant
     @GetMapping("/supervisors")
+
     public ResponseEntity<GetEmployeesResponse> getAllSupervisors() {
         try {
             UUID tenantId = getCurrentUserTenantId();
