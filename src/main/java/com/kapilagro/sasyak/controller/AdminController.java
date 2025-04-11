@@ -140,6 +140,26 @@ public class AdminController {
         }
     }
 
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getDashboard() {
+        UUID  tenantId = getCurrentUserTenantId();
+        try {
+            DashBoardResponse dashboardStats = adminService.getDashboardStats(tenantId);
+            return ResponseEntity.ok(dashboardStats);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(DashBoardResponse.builder()
+                            .errorMessage("Failed to fetch dashboard stats: " + e.getMessage())
+                            .build());
+        }
+    }
+
+
+
+
     // New endpoint for paginated managers
     @GetMapping("/managers")
     @PreAuthorize("hasRole('ADMIN')")

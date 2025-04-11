@@ -38,6 +38,7 @@ public class AdminService {
         return userService.getUsersByTenant(tenantId);
     }
 
+
     // Get dashboard stats for a tenant
     public DashBoardResponse getDashboardStats(UUID tenantId) {
         // Get counts for different user roles

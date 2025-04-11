@@ -1,6 +1,7 @@
 package com.kapilagro.sasyak.controller;
 
 import com.kapilagro.sasyak.model.GetEmployeesResponse;
+import com.kapilagro.sasyak.model.PagedEmployeesResponse;
 import com.kapilagro.sasyak.model.User;
 import com.kapilagro.sasyak.model.UserDTO;
 import com.kapilagro.sasyak.services.UserService;
@@ -76,36 +77,78 @@ public class UserManagerController {
     }
 
     // Get supervisors from the manager's tenant
-    @GetMapping("/supervisors")
+//    @GetMapping("/supervisors")
+//    public ResponseEntity<GetEmployeesResponse> getAllSupervisors() {
+//        try {
+//            UUID tenantId = getCurrentUserTenantId();
+//
+//            List<User> supervisors = userService.getUsersByTenantAndRole(tenantId, "SUPERVISOR");
+//
+//            // Map user entities to DTOs
+//            List<GetEmployeesResponse.EmployeeDTO> userDTOs = supervisors.stream()
+//                    .map(user -> GetEmployeesResponse.EmployeeDTO.builder()
+//                            .id(user.getUserId())
+//                            .name(user.getName())
+//                            .email(user.getEmail())
+//                            .role(user.getRole())
+//                            .build())
+//                    .collect(Collectors.toList());
+//
+//            // Build response
+//            GetEmployeesResponse response = GetEmployeesResponse.builder()
+//                    .employees(userDTOs)
+//                    .build();
+//
+//            return ResponseEntity.ok(response);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(new GetEmployeesResponse());
+//        }
+//    }
 
-    public ResponseEntity<GetEmployeesResponse> getAllSupervisors() {
+    @GetMapping("/supervisors")
+    public ResponseEntity<PagedEmployeesResponse> getAllSupervisors(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
             UUID tenantId = getCurrentUserTenantId();
 
-            List<User> supervisors = userService.getUsersByTenantAndRole(tenantId, "SUPERVISOR");
+            // Get all supervisors first to count total
+            List<User> allSupervisors = userService.getUsersByTenantAndRole(tenantId, "SUPERVISOR");
+            int total = allSupervisors.size();
 
-            // Map user entities to DTOs
-            List<GetEmployeesResponse.EmployeeDTO> userDTOs = supervisors.stream()
-                    .map(user -> GetEmployeesResponse.EmployeeDTO.builder()
-                            .id(user.getUserId())
-                            .name(user.getName())
-                            .email(user.getEmail())
-                            .role(user.getRole())
+            // Get paginated supervisors
+            List<User> pagedSupervisors = userService.getPagedUsersByTenantAndRole(
+                    tenantId,
+                    "SUPERVISOR",
+                    page,
+                    size
+            );
+
+            // Map to DTOs
+            List<GetEmployeesResponse.EmployeeDTO> supervisorDTOs = pagedSupervisors.stream()
+                    .map(supervisor -> GetEmployeesResponse.EmployeeDTO.builder()
+                            .id(supervisor.getUserId())
+                            .name(supervisor.getName())
+                            .email(supervisor.getEmail())
+                            .role(supervisor.getRole())
                             .build())
                     .collect(Collectors.toList());
 
-            // Build response
-            GetEmployeesResponse response = GetEmployeesResponse.builder()
-                    .employees(userDTOs)
+            // Build paged response
+            PagedEmployeesResponse response = PagedEmployeesResponse.builder()
+                    .employees(supervisorDTOs)
+                    .totalItems(total)
+                    .totalPages((int) Math.ceil((double) total / size))
+                    .currentPage(page)
                     .build();
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new GetEmployeesResponse());
+                    .body(new PagedEmployeesResponse());
         }
     }
-
     // Get user by ID (manager can only access users in their tenant and team)
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable("id") int id) {
