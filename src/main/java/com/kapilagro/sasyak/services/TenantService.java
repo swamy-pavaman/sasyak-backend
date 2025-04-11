@@ -40,7 +40,7 @@ public class TenantService {
     /**
      * Get tenant by ID
      */
-    public Optional<Tenant> getTenantById(int id) {
+    public Optional<Tenant> getTenantById(UUID id) {
         return tenantRepo.getTenantById(id);
     }
 
@@ -114,7 +114,7 @@ public class TenantService {
 
     /**
      * Generate a random secure password
-//     */
+     //     */
 //    private String generateRandomPassword() {
 //        String upperCaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 //        String lowerCaseLetters = "abcdefghijklmnopqrstuvwxyz";

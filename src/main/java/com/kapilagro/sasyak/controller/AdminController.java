@@ -42,43 +42,43 @@ public class AdminController {
         }
         return currentUser.getTenantId();
     }
-
-    @PostMapping("/employees")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> createEmployee(@RequestBody CreateEmployeeRequest request) {
-        try {
-            UUID  tenantId = getCurrentUserTenantId();
-
-            // Create employee model from request
-            User employee = User.builder()
-                    .name(request.getName())
-                    .email(request.getEmail())
-                    .password(generatePasswordUtility.generateRandomPassword())
-                    .phone_number(request.getPhone_number())
-                    .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
-                    .build();
-
-            // Create the employee
-            System.out.println(employee.getPassword());
-            User createdEmployee = adminService.createEmployee(employee, tenantId);
-
-            emailService.sendMail(employee.getEmail(),request.getCompanyName(),employee.getPassword());
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    GetEmployeesResponse.EmployeeDTO.builder()
-                            .id(createdEmployee.getUserId())
-                            .name(createdEmployee.getName())
-                            .email(createdEmployee.getEmail())
-                            .role(createdEmployee.getRole())
-                            .build()
-            );
-
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error creating employee: " + e.getMessage());
-        }
-    }
+//
+//    @PostMapping("/employees")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<?> createEmployee(@RequestBody CreateEmployeeRequest request) {
+//        try {
+//            UUID  tenantId = getCurrentUserTenantId();
+//
+//            // Create employee model from request
+//            User employee = User.builder()
+//                    .name(request.getName())
+//                    .email(request.getEmail())
+//                    .password(generatePasswordUtility.generateRandomPassword())
+//                    .phone_number(request.getPhone_number())
+//                    .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
+//                    .build();
+//
+//            // Create the employee
+//            System.out.println(employee.getPassword());
+//            User createdEmployee = adminService.createEmployee(employee, tenantId);
+//
+//            emailService.sendMail(employee.getEmail(),request.getCompanyName(),employee.getPassword());
+//
+//            return ResponseEntity.status(HttpStatus.CREATED).body(
+//                    GetEmployeesResponse.EmployeeDTO.builder()
+//                            .id(createdEmployee.getUserId())
+//                            .name(createdEmployee.getName())
+//                            .email(createdEmployee.getEmail())
+//                            .role(createdEmployee.getRole())
+//                            .build()
+//            );
+//
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("Error creating employee: " + e.getMessage());
+//        }
+//    }
 
     @GetMapping("/employees")
     @PreAuthorize("hasRole('ADMIN')")

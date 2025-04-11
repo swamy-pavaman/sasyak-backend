@@ -78,29 +78,28 @@ public class UserService {
     }
 
     // Get users by tenant ID
-    public List<User> getUsersByTenant(int tenantId) {
+    public List<User> getUsersByTenant(UUID tenantId) {
         return userRepo.getUsersByTenant(tenantId);
     }
 
-    // Get users by tenant ID and role
+    // Get users by tenant ID and role (case-insensitive)
     public List<User> getUsersByTenantAndRole(UUID tenantId, String role) {
         return userRepo.getUsersByTenantAndRole(tenantId, role);
     }
 
-    // New method: Get paginated users by tenant ID and role
+    // Get paginated users by tenant ID and role (case-insensitive)
     public List<User> getPagedUsersByTenantAndRole(UUID tenantId, String role, int page, int size) {
         return userRepo.getPagedUsersByTenantAndRole(tenantId, role, page, size);
     }
 
-    // Get managers and supervisors for a specific tenant
+    // Get managers and supervisors for a specific tenant (case-insensitive)
     public List<User> getManagersAndSupervisors(UUID tenantId) {
-        return userRepo.getUsersByTenantAndRoles(tenantId, Arrays.asList("MANAGER", "SUPERVISOR"));
+        return userRepo.getUsersByTenantAndRoles(tenantId, Arrays.asList("Manager", "Supervisor"));
     }
 
     // Check if a user belongs to a specific tenant
     public boolean isUserInTenant(int userId, UUID tenantId) {
         Optional<User> user = getUserById(userId);
-
         return user.isPresent() && user.get().getTenantId() != null && user.get().getTenantId().equals(tenantId);
     }
 
@@ -118,9 +117,44 @@ public class UserService {
         return registerUser(employee);
     }
 
-    // New method: Delete a user by ID
+    // Delete a user by ID
     @Transactional
     public boolean deleteUser(int userId) {
         return userRepo.deleteById(userId);
+    }
+
+    // Update an existing user
+    @Transactional
+    public User updateUser(User user) {
+        // Check if there's a password to encode
+        if (user.getPassword() != null && !user.getPassword().isEmpty()
+                && !user.getPassword().startsWith("$2a$")) {
+            // Only encode if it's not already encoded (doesn't start with bcrypt prefix)
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+
+        // Update the user in the database
+        userRepo.update(user);
+
+        // Return the updated user
+        return user;
+    }
+
+    // Debug method to get the count of managers for a tenant
+    public int countManagersByTenant(UUID tenantId) {
+        return userRepo.countManagersByTenant(tenantId);
+    }
+
+    public int countUsersByTenantAndRole(UUID tenantId, String role) {
+        return userRepo.countUsersByTenantAndRole(tenantId, role);
+    }
+
+    public int countUsersByTenant(UUID tenantId) {
+        return userRepo.countUsersByTenant(tenantId);
+    }
+
+    // Get users that report to a specific manager
+    public List<User> getUsersByManagerId(int managerId) {
+        return userRepo.getUsersByManagerId(managerId);
     }
 }

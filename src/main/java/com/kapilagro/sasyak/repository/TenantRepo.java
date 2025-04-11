@@ -77,7 +77,7 @@ public class TenantRepo {
     /**
      * Get a tenant by ID
      */
-    public Optional<Tenant> getTenantById(int id) {
+    public Optional<Tenant> getTenantById(UUID id) {
         String query = "SELECT * FROM tenants WHERE tenant_id = ?";
         return template.query(query, tenantRowMapper, id)
                 .stream()

@@ -48,21 +48,21 @@ public class SuperAdminService {
     /**
      * Get tenant by ID
      */
-    public Optional<Tenant> getTenantById(int id) {
+    public Optional<Tenant> getTenantById(UUID id) {
         return tenantService.getTenantById(id);
     }
 
     /**
      * Check if a tenant exists
      */
-    public boolean tenantExists(int id) {
+    public boolean tenantExists(UUID id) {
         return tenantService.getTenantById(id).isPresent();
     }
 
     /**
      * Get all users for a specific tenant
      */
-    public List<User> getUsersByTenant(int tenantId) {
+    public List<User> getUsersByTenant(UUID tenantId) {
         return userService.getUsersByTenant(tenantId);
     }
 

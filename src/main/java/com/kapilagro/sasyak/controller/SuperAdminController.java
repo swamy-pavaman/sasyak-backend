@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -118,7 +119,7 @@ public class SuperAdminController {
      */
     @GetMapping("/tenants/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> getTenantById(@PathVariable("id") int id) {
+    public ResponseEntity<?> getTenantById(@PathVariable("id") UUID id) {
         try {
             return superAdminService.getTenantById(id)
                     .map(tenant -> {
@@ -143,7 +144,7 @@ public class SuperAdminController {
      */
     @GetMapping("/tenants/{id}/users")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> getTenantUsers(@PathVariable("id") int id) {
+    public ResponseEntity<?> getTenantUsers(@PathVariable("id") UUID id) {
         try {
             // Check if tenant exists
             if (!superAdminService.tenantExists(id)) {
