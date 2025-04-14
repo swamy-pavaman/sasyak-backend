@@ -135,7 +135,7 @@ public class UserAdminController {
             User createdEmployee = adminService.createEmployee(employee, tenantId);
 
             emailService.sendMail(employee.getEmail(), request.getCompanyName(), employee.getPassword());
-
+            System.out.println(employee.getPassword());
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     GetEmployeesResponse.EmployeeDTO.builder()
                             .id(createdEmployee.getUserId())
