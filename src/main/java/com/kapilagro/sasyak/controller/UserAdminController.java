@@ -131,11 +131,10 @@ public class UserAdminController {
                     .build();
 
             System.out.println(employee.getPassword());
-
+            String password =employee.getPassword();
             User createdEmployee = adminService.createEmployee(employee, tenantId);
-
-            emailService.sendMail(employee.getEmail(), request.getCompanyName(), employee.getPassword());
-            System.out.println(employee.getPassword());
+            emailService.sendMail(employee.getEmail(), request.getCompanyName(), password+"  this is added");
+//            System.out.println(employee.getPassword());
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     GetEmployeesResponse.EmployeeDTO.builder()
                             .id(createdEmployee.getUserId())
