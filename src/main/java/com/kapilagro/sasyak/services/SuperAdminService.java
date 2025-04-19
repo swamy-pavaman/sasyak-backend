@@ -105,4 +105,8 @@ public class SuperAdminService {
         // Register without setting a tenant ID
         return userService.registerUser(superAdmin);
     }
+
+    public boolean existsByContactEmail(String contactEmail) {
+        return tenantRepo.existsByContactEmail(contactEmail);
+    }
 }

@@ -29,7 +29,7 @@ public class DatabaseInitializer implements CommandLineRunner {
     @Value("${superadmin.name:Super Admin}")
     private String superAdminName;
 
-    @Value("${superadmin.tenantid:a45a8ea6-a01a-444a-bf71-f098fbd9aed2}")
+    @Value("${superadmin.tenantid:91ddd580-f145-4a94-a0b8-d20e4c72c662}")
     private String tenantId;
 
 

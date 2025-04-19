@@ -2,6 +2,7 @@ package com.kapilagro.sasyak.repository;
 
 import com.kapilagro.sasyak.model.Tenant;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -108,4 +109,15 @@ public class TenantRepo {
         String query = "SELECT * FROM tenants WHERE active = false ORDER BY created_at DESC";
         return template.query(query, tenantRowMapper);
     }
+
+    public boolean existsByContactEmail(String contactEmail) {
+        String query = "SELECT 1 FROM tenants WHERE contact_email = ? LIMIT 1";
+        try {
+            Integer result = template.queryForObject(query, Integer.class, contactEmail);
+            return result != null;
+        } catch (EmptyResultDataAccessException e) {
+            return false;
+        }
+    }
+
 }
