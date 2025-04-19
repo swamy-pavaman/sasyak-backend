@@ -104,7 +104,7 @@ public class SuperAdminController {
                             .build())
                     .collect(Collectors.toList());
 
-            // Build response
+            // Build resp
             GetAllTenantsResponse response = GetAllTenantsResponse.builder()
                     .tenants(tenantDTOs)
                     .build();
