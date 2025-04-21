@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@CrossOrigin("*")
 @RequestMapping("/api/supervisor")
 @PreAuthorize("hasRole('SUPERVISOR')")
 public class UserSupervisorController {

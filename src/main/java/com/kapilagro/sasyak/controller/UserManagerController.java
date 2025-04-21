@@ -19,7 +19,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin("*")
 @RequestMapping("/api/manager/users")
 @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
 public class UserManagerController {

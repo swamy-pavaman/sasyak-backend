@@ -293,6 +293,50 @@
 
 ## Admin User Management
 
+### 📊 Get Admin Dashboard Stats
+- **URL**: `/api/admin/dashboard`
+- **Method**: `GET`
+- **Description**: Fetch dashboard statistics for the current tenant, including employee counts, task stats, and advice count.
+- **Access**: Requires `ADMIN` role
+
+---
+
+### ✅ Successful Response
+- **Status Code**: `200 OK`
+```json
+{
+  "totalEmployees": 45,
+  "totalSupervisors": 10,
+  "totalManagers": 5,
+  "totalTasks": 120,
+  "taskStatusBreakdown": {
+    "PENDING": 25,
+    "IN_PROGRESS": 50,
+    "COMPLETED": 45
+  },
+  "recentTasks": 8,
+  "adviceCount": 30,
+  "errorMessage": null
+}
+```
+
+---
+
+### ❌ Error Response
+- **Status Code**: `500 Internal Server Error`
+```json
+{
+  "totalEmployees": 0,
+  "totalSupervisors": 0,
+  "totalManagers": 0,
+  "totalTasks": 0,
+  "taskStatusBreakdown": {},
+  "recentTasks": 0,
+  "adviceCount": 0,
+  "errorMessage": "Failed to fetch dashboard stats: <error message>"
+}
+```
+
 ### Get All Users
 - **URL**: `/api/admin/users`
 - **Method**: `GET`

@@ -23,7 +23,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin("*")
 @RequestMapping("/api/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
 public class UserAdminController {
@@ -152,6 +151,8 @@ public class UserAdminController {
                     .body("Error creating employee: " + e.getMessage());
         }
     }
+
+
 
 
 

@@ -17,7 +17,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin("*")
 // TODO update with original origin
 @RequestMapping("/api")
 public class SuperAdminController {
