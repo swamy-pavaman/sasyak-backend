@@ -6,8 +6,7 @@
     - [Login User](#login-user)
     - [Login Super Admin](#login-super-admin)
     - [Refresh Token](#refresh-token)
-- [User Management](#user-management)
-    - [Get User by ID](#get-user-by-id)
+    -[Get User by ID](#get-user-by-id)
     - [Get Current User](#get-current-user)
     - [Create User](#create-user)
     - [Update User](#update-user)
@@ -453,7 +452,6 @@
     - Status Code: 403 Forbidden - Not authorized to delete this user
     - Status Code: 404 Not Found - User not found
     - Status Code: 500 Internal Server Error
-
 ### Get Users by Role
 - **URL**: `/api/admin/users/by-role/{role}`
 - **Method**: `GET`
