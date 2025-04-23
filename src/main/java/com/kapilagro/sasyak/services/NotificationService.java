@@ -8,9 +8,7 @@ import java.util.UUID;
 
 @Service
 public class NotificationService {
-
     private final JdbcTemplate jdbcTemplate;
-
     @Autowired
     public NotificationService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

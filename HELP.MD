@@ -27,7 +27,7 @@
     - [Get All Supervisors](#get-all-supervisors)
     - [Get Team Member by ID](#get-team-member-by-id)
     - [Update Team Member](#update-team-member)
-    - [Assign Supervisor to Team](#assign-supervisor-to-team)
+    - [Assign Supervisor to Team](#assign-supervisor-to-team) 
     - [Unassign Supervisor from Team](#unassign-supervisor-from-team)
 - [Supervisor Operations](#supervisor-operations)
     - [Get Manager](#get-manager)
@@ -1393,4 +1393,180 @@
   "totalCount": "integer"
   }
 
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Super Admin REST API Documentation
+
+## Overview
+This document outlines the REST APIs for **Super Admin** operations in the Sasyak SaaS system. The APIs are grouped into two categories:
+
+- **SuperAdminAuthController** — handles authentication tasks (login, register).
+- **SuperAdminNormalController** — handles tenant management and super admin operations.
+
+---
+
+## 🔐 SuperAdminAuthController (Authentication)
+
+### `POST /api/super-admin/auth/login`
+**Description**: Login as a super admin.
+
+**Request Body:**
+```json
+{
+  "email": "admin@example.com",
+  "password": "yourpassword"
+}
+```
+
+**Response:**
+```json
+{
+  "accessToken": "jwt-token",
+  "refreshToken": "refresh-token",
+  "name": "Super Admin"
+}
+```
+
+---
+
+### `POST /api/super-admin/auth/register`
+**Description**: Register a new super admin (initial setup or via internal tools).
+
+**Request Body:**
+```json
+{
+  "name": "Admin Name",
+  "email": "admin@example.com",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Super admin registered successfully"
+}
+```
+
+---
+
+## 🛠️ SuperAdminNormalController (Tenant Management)
+
+### `POST /api/super-admin/create-tenant`
+**Description**: Creates a new tenant and an associated admin user.
+
+**Request Body:**
+```json
+{
+  "tenantSchemaName": "tenant_abc",
+  "companyName": "ABC Corp",
+  "contactEmail": "info@abc.com",
+  "adminName": "Kapil",
+  "adminEmail": "admin@abc.com"
+}
+```
+
+**Response:**
+```json
+{
+  "tenantId": "uuid",
+  "schemaName": "tenant_abc",
+  "adminEmail": "admin@abc.com",
+  "generatedPassword": "Abc@12345"
+}
+```
+
+---
+
+### `GET /api/super-admin/tenants`
+**Description**: Lists all tenants.
+
+**Query Parameters (optional):**
+- `page` (integer): Page number (default: 0)
+- `size` (integer): Page size (default: 10)
+- `search` (string): Filter tenants by company name or schema name
+
+**Response:**
+```json
+{
+  "totalPages": 5,
+  "totalElements": 42,
+  "currentPage": 0,
+  "pageSize": 10,
+  "content": [
+    {
+      "tenantId": "uuid",
+      "schemaName": "tenant_abc",
+      "companyName": "ABC Corp",
+      "contactEmail": "info@abc.com",
+      "isActive": true,
+      "createdAt": "2024-05-01T12:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### `DELETE /api/super-admin/tenants/{schemaName}`
+**Description**: Deactivates a tenant by schema name (soft delete).
+
+**Path Variable:**
+- `schemaName`: Name of the tenant schema (e.g., `tenant_abc`)
+
+**Response:**
+- `204 No Content`
+
+---
+
+## 🔄 Token Refresh (Future Scope)
+### `POST /api/super-admin/auth/refresh`
+**(Optional)**: Refresh JWT tokens. Can be added later.
+
+---
+
+## ⚠️ Error Handling
+All error responses will follow this format:
+```json
+{
+  "timestamp": "2024-05-01T12:00:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Detailed error message",
+  "path": "/api/super-admin/..."
+}
+```
+
+---
+
+## ✅ Notes
+- All endpoints are secured. Use Bearer tokens from `/auth/login`.
+- Only users with role `SUPER_ADMIN` should have access.
+- Email generation for admin password is handled via the `email_queue` table and sent asynchronously.
+
+---
+
+## 📌 Future Enhancements
+- Reset admin password endpoint
+- Super admin activity logs
+
