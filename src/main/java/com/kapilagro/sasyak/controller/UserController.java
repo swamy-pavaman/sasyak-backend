@@ -1,30 +1,27 @@
 package com.kapilagro.sasyak.controller;
 
-class UserController{
 
-}
-//
-//import com.kapilagro.sasyak.model.GetUserResponse;
-//import com.kapilagro.sasyak.model.User;
-//import com.kapilagro.sasyak.model.UserDTO;
-//import com.kapilagro.sasyak.services.MyUserPrincipal;
-//import com.kapilagro.sasyak.services.UserService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.security.core.Authentication;
-//import org.springframework.security.core.context.SecurityContextHolder;
-//import org.springframework.web.bind.annotation.*;
-//
-//import java.util.Optional;
-//
-//@RestController
-//@RequestMapping("api/user")
-//public class UserController {
-//
-//    @Autowired
-//    private UserService userService;
-//
+import com.kapilagro.sasyak.model.GetUserResponse;
+import com.kapilagro.sasyak.model.User;
+import com.kapilagro.sasyak.model.UserDTO;
+import com.kapilagro.sasyak.services.MyUserPrincipal;
+import com.kapilagro.sasyak.services.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
+
+@RestController
+@RequestMapping("api/user")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
 //    @GetMapping("/{id}")
 //    public ResponseEntity<?> getUser(@PathVariable("id") int id){
 //        Optional<User> user = userService.getUserById(id);
@@ -40,55 +37,56 @@ class UserController{
 //        return response.<ResponseEntity<?>>map(ResponseEntity::ok)
 //                .orElseGet(()->ResponseEntity.status(HttpStatus.NOT_FOUND).body("User Not Found"));
 //    }
-//
-//    @GetMapping("/me")
-//    public ResponseEntity<?> getMe() {
-//        try {
-//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//
-//            if (authentication == null || !authentication.isAuthenticated()) {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
-//            }
-//
-//            // Check if the principal is a User object directly
-//            if (authentication.getPrincipal() instanceof User) {
-//                User user = (User) authentication.getPrincipal();
-//
-//                UserDTO userDTO = UserDTO.builder()
-//                        .id(user.getUserId())
-//                        .name(user.getName())
-//                        .email(user.getEmail())
-//                        .role(user.getRole())
-//                        .tenantId(user.getTenantId())
-//                        .build();
-//
-//                return ResponseEntity.ok(userDTO);
-//            } else {
-//                // Fallback to username lookup if principal isn't a User
-//                String username = authentication.getName();
-//                User user = userService.getUserByUserEmail(username);
-//
-//                if (user != null) {
-//                    UserDTO userDTO = UserDTO.builder()
-//                            .id(user.getUserId())
-//                            .name(user.getName())
-//                            .email(user.getEmail())
-//                            .role(user.getRole())
-//                            .tenantId(user.getTenantId())
-//                            .build();
-//
-//                    return ResponseEntity.ok(userDTO);
-//                }
-//            }
-//
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body("Error retrieving user information");
-//        }
-//    }
-//    // New CRUD operations for users
-//
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+
+            // Check if the principal is a User object directly
+            if (authentication.getPrincipal() instanceof User) {
+                User user = (User) authentication.getPrincipal();
+
+                UserDTO userDTO = UserDTO.builder()
+                        .id(user.getUserId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .tenantId(user.getTenantId())
+                        .phoneNumber(user.getPhone_number())
+                        .build();
+
+                return ResponseEntity.ok(userDTO);
+            } else {
+                // Fallback to username lookup if principal isn't a User
+                String username = authentication.getName();
+                User user = userService.getUserByUserEmail(username);
+
+                if (user != null) {
+                    UserDTO userDTO = UserDTO.builder()
+                            .id(user.getUserId())
+                            .name(user.getName())
+                            .email(user.getEmail())
+                            .role(user.getRole())
+                            .tenantId(user.getTenantId())
+                            .build();
+
+                    return ResponseEntity.ok(userDTO);
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving user information");
+        }
+    }
+    // New CRUD operations for users
+
 //    @PostMapping
 //    public ResponseEntity<?> createUser(@RequestBody User user) {
 //        try {
@@ -163,7 +161,7 @@ class UserController{
 //                    .body("Error updating user: " + e.getMessage());
 //        }
 //    }
-//
+
 //    @DeleteMapping("/{id}")
 //    public ResponseEntity<?> deleteUser(@PathVariable("id") int id) {
 //        try {
@@ -179,4 +177,4 @@ class UserController{
 //                    .body("Error deleting user: " + e.getMessage());
 //        }
 //    }
-//}
+}

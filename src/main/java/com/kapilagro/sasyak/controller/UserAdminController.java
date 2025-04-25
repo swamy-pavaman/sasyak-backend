@@ -5,6 +5,7 @@ import com.kapilagro.sasyak.services.AdminService;
 import com.kapilagro.sasyak.services.EmailService;
 import com.kapilagro.sasyak.services.UserService;
 import com.kapilagro.sasyak.utils.GeneratePasswordUtility;
+import com.kapilagro.sasyak.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -12,8 +13,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +45,8 @@ public class UserAdminController {
 
     @Autowired
     private EmailService emailService;
+
+
 
     // Helper method to get the current tenant ID from the authenticated user
     private UUID getCurrentUserTenantId() {
@@ -96,6 +105,7 @@ public class UserAdminController {
                             .name(user.getName())
                             .email(user.getEmail())
                             .role(user.getRole())
+                            .phoneNumber(user.getPhone_number())
                             .tenantId(user.getTenantId())
                             .build();
 
@@ -114,6 +124,8 @@ public class UserAdminController {
         }
     }
 
+
+
     // Create a new user (admin can only create users in their tenant)
 
     @PostMapping
@@ -129,7 +141,7 @@ public class UserAdminController {
                     .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
                     .build();
 
-            System.out.println(employee.getPassword());
+            System.out.println("user name :"+employee.getEmail()+"employee password :"+employee.getPassword());
             String password =employee.getPassword();
             User createdEmployee = adminService.createEmployee(employee, tenantId);
             emailService.sendMail(employee.getEmail(), request.getCompanyName(), password+"  this is added");
@@ -194,6 +206,10 @@ public class UserAdminController {
                         existingUser.setPassword(userDetails.getPassword());
                     }
 
+                    if(userDetails.getPhone_number()!=null){
+                        existingUser.setPhone_number(userDetails.getPhone_number());
+                    }
+
                     // Keep the tenant ID the same
                     existingUser.setTenantId(tenantId);
 
@@ -205,6 +221,7 @@ public class UserAdminController {
                             .name(updatedUser.getName())
                             .email(updatedUser.getEmail())
                             .role(updatedUser.getRole())
+                            .phoneNumber(updatedUser.getPhone_number())
                             .tenantId(updatedUser.getTenantId())
                             .build();
 
@@ -452,4 +469,99 @@ public class UserAdminController {
                     .body("Error retrieving team members: " + e.getMessage());
         }
     }
+
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getDashboard() {
+        UUID  tenantId = getCurrentUserTenantId();
+        try {
+            DashBoardResponse dashboardStats = adminService.getDashboardStats(tenantId);
+            return ResponseEntity.ok(dashboardStats);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(DashBoardResponse.builder()
+                            .errorMessage("Failed to fetch dashboard stats: " + e.getMessage())
+                            .build());
+        }
+    }
+
+
+    @GetMapping("/managers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PagedEmployeesResponse> getManagers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+
+            // Get paged managers
+            Page<User> managersPage = adminService.getPagedManagers(tenantId, PageRequest.of(page, size));
+
+            System.out.println("in admin controller tenantId    "+tenantId);
+
+            // Map to DTOs
+            List<GetEmployeesResponse.EmployeeDTO> managerDTOs = managersPage.getContent().stream()
+                    .map(manager -> GetEmployeesResponse.EmployeeDTO.builder()
+                            .id(manager.getUserId())
+                            .name(manager.getName())
+                            .email(manager.getEmail())
+                            .role(manager.getRole())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Build paged response
+            PagedEmployeesResponse response = PagedEmployeesResponse.builder()
+                    .employees(managerDTOs)
+                    .totalItems(managersPage.getTotalElements())
+                    .totalPages(managersPage.getTotalPages())
+                    .currentPage(managersPage.getNumber())
+                    .build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new PagedEmployeesResponse());
+        }
+    }
+
+    // New endpoint for paginated supervisors
+    @GetMapping("/supervisors")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PagedEmployeesResponse> getSupervisors(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+
+            // Get paged supervisors
+            Page<User> supervisorsPage = adminService.getPagedSupervisors(tenantId, PageRequest.of(page, size));
+
+            // Map to DTOs
+            List<GetEmployeesResponse.EmployeeDTO> supervisorDTOs = supervisorsPage.getContent().stream()
+                    .map(supervisor -> GetEmployeesResponse.EmployeeDTO.builder()
+                            .id(supervisor.getUserId())
+                            .name(supervisor.getName())
+                            .email(supervisor.getEmail())
+                            .role(supervisor.getRole())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Build paged response
+            PagedEmployeesResponse response = PagedEmployeesResponse.builder()
+                    .employees(supervisorDTOs)
+                    .totalItems(supervisorsPage.getTotalElements())
+                    .totalPages(supervisorsPage.getTotalPages())
+                    .currentPage(supervisorsPage.getNumber())
+                    .build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new PagedEmployeesResponse());
+        }
+    }
+
+
 }

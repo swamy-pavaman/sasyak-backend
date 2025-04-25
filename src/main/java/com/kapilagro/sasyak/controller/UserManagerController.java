@@ -75,35 +75,6 @@ public class UserManagerController {
         }
     }
 
-    // Get supervisors from the manager's tenant
-//    @GetMapping("/supervisors")
-//    public ResponseEntity<GetEmployeesResponse> getAllSupervisors() {
-//        try {
-//            UUID tenantId = getCurrentUserTenantId();
-//
-//            List<User> supervisors = userService.getUsersByTenantAndRole(tenantId, "SUPERVISOR");
-//
-//            // Map user entities to DTOs
-//            List<GetEmployeesResponse.EmployeeDTO> userDTOs = supervisors.stream()
-//                    .map(user -> GetEmployeesResponse.EmployeeDTO.builder()
-//                            .id(user.getUserId())
-//                            .name(user.getName())
-//                            .email(user.getEmail())
-//                            .role(user.getRole())
-//                            .build())
-//                    .collect(Collectors.toList());
-//
-//            // Build response
-//            GetEmployeesResponse response = GetEmployeesResponse.builder()
-//                    .employees(userDTOs)
-//                    .build();
-//
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new GetEmployeesResponse());
-//        }
-//    }
 
     @GetMapping("/supervisors")
     public ResponseEntity<PagedEmployeesResponse> getAllSupervisors(
@@ -148,51 +119,6 @@ public class UserManagerController {
                     .body(new PagedEmployeesResponse());
         }
     }
-    // Get user by ID (manager can only access users in their tenant and team)
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable("id") int id) {
-        try {
-            UUID tenantId = getCurrentUserTenantId();
-            int managerId = getCurrentUserId();
-
-            Optional<User> userOpt = userService.getUserById(id);
-
-            if (userOpt.isPresent()) {
-                User user = userOpt.get();
-
-                // Verify user belongs to manager's tenant
-                if (user.getTenantId() != null && user.getTenantId().equals(tenantId)) {
-                    // Verify user is in manager's team or is the manager themselves
-                    if (user.getUserId() == managerId ||
-                            (user.getManagerId() != null && user.getManagerId() == managerId)) {
-
-                        UserDTO userDTO = UserDTO.builder()
-                                .id(user.getUserId())
-                                .name(user.getName())
-                                .email(user.getEmail())
-                                .role(user.getRole())
-                                .tenantId(user.getTenantId())
-                                .build();
-
-                        return ResponseEntity.ok(userDTO);
-                    } else {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                .body("You don't have permission to access this user");
-                    }
-                } else {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body("You don't have permission to access this user");
-                }
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("User not found with ID: " + id);
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error retrieving user: " + e.getMessage());
-        }
-    }
-
     // Update a team member (manager can only update users in their team)
     @PutMapping("/team/{id}")
     public ResponseEntity<?> updateTeamMember(@PathVariable("id") int id, @RequestBody User userDetails) {

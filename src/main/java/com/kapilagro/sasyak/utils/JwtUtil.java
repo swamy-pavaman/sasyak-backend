@@ -25,7 +25,7 @@ public class JwtUtil {
     private static final String REFRESH_SECRET_KEY ="HyaFfpChC8IekjRGc5loPYid4/uHekm0dBmlJaYnvq0=";
 
 
-    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 30; // 30 minutes
+    private static final long ACCESS_TOKEN_EXPIRATION = (1000 * 60 * 30)*3; // 90 minutes
     private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 days
 
     private SecretKey getSigningKey() {

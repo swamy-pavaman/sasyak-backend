@@ -63,6 +63,8 @@ public class TenantService {
         String generatedPassword = generateRandomPassword.generateRandomPassword();
         String rawPassword = generatedPassword;
 
+
+
         // Set up the admin user
         adminUser.setTenantId(tenantId);
         adminUser.setRole("ADMIN"); // Ensure role is set to ADMIN
