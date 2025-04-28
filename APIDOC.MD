@@ -210,7 +210,8 @@ The current API version is v1, which is implicit in the base URL. Future version
     "refreshToken": "string",
     "email": "string",
     "name": "string",
-    "userId": "integer"
+    "userId": "integer",
+    "role": "string"
   }
   ```
 

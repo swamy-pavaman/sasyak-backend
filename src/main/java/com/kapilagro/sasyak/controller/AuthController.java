@@ -81,6 +81,7 @@ public class AuthController {
                     .userId(userFromDb.getUserId())
                     .email(userFromDb.getEmail())
                     .name(userFromDb.getName())
+                    .role(userFromDb.getRole())
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .build();
@@ -159,6 +160,7 @@ public class AuthController {
                     .email(userFromDb.getEmail())
                     .name(userFromDb.getName())
                     .accessToken(accessToken)
+                    .role(userFromDb.getRole())
                     .refreshToken(refreshToken)
                     .build();
 

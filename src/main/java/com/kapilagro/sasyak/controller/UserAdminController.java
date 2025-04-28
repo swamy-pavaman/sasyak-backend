@@ -275,13 +275,51 @@ public class UserAdminController {
     }
 
     // Get users by role (admin can only get users in their tenant)
+//    @GetMapping("/by-role/{role}")
+//    public ResponseEntity<GetEmployeesResponse> getUsersByRole(@PathVariable("role") String role) {
+//        try {
+//            UUID tenantId = getCurrentUserTenantId();
+//            List<User> users = userService.getUsersByTenantAndRole(tenantId, role);
+//
+//            // Map user entities to DTOs
+//            List<GetEmployeesResponse.EmployeeDTO> userDTOs = users.stream()
+//                    .map(user -> GetEmployeesResponse.EmployeeDTO.builder()
+//                            .id(user.getUserId())
+//                            .name(user.getName())
+//                            .email(user.getEmail())
+//                            .role(user.getRole())
+//                            .build())
+//                    .collect(Collectors.toList());
+//
+//            // Build response
+//            GetEmployeesResponse response = GetEmployeesResponse.builder()
+//                    .employees(userDTOs)
+//                    .build();
+//
+//            return ResponseEntity.ok(response);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(new GetEmployeesResponse());
+//        }
+//    }
+
     @GetMapping("/by-role/{role}")
-    public ResponseEntity<GetEmployeesResponse> getUsersByRole(@PathVariable("role") String role) {
+    public ResponseEntity<?> getUsersByRole(@PathVariable("role") String role) {
         try {
             UUID tenantId = getCurrentUserTenantId();
-            List<User> users = userService.getUsersByTenantAndRole(tenantId, role);
 
-            // Map user entities to DTOs
+            if (role == null || role.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Role parameter must not be empty."));
+            }
+
+            List<User> users = userService.getUsersByTenantAndRole(tenantId, role.toUpperCase());
+
+            if (users.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "No users found with role: " + role));
+            }
+
             List<GetEmployeesResponse.EmployeeDTO> userDTOs = users.stream()
                     .map(user -> GetEmployeesResponse.EmployeeDTO.builder()
                             .id(user.getUserId())
@@ -291,15 +329,19 @@ public class UserAdminController {
                             .build())
                     .collect(Collectors.toList());
 
-            // Build response
             GetEmployeesResponse response = GetEmployeesResponse.builder()
                     .employees(userDTOs)
                     .build();
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Invalid role provided: " + ex.getMessage()));
         } catch (Exception e) {
+            //e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new GetEmployeesResponse());
+                    .body(Map.of("error", "Failed to fetch users by role: " + e.getMessage()));
         }
     }
 
