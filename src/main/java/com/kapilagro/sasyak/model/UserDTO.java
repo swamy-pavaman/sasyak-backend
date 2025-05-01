@@ -18,4 +18,6 @@ public class UserDTO {
     private String role;
     private UUID tenantId;
     private String phoneNumber;
+    private String profile;
+    private String location;
 }

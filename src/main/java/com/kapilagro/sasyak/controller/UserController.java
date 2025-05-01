@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("api/user")
@@ -21,6 +22,21 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    private UUID getCurrentUserTenantId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        if (currentUser.getTenantId() == null) {
+            throw new IllegalStateException("Supervisor user is not associated with a tenant");
+        }
+        return currentUser.getTenantId();
+    }
+
+    private int getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        return currentUser.getUserId();
+    }
 
 //    @GetMapping("/{id}")
 //    public ResponseEntity<?> getUser(@PathVariable("id") int id){
@@ -86,6 +102,84 @@ public class UserController {
         }
     }
     // New CRUD operations for users
+
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile() {
+        try {
+            int userId = getCurrentUserId();
+            Optional<User> userOpt = userService.getUserById(userId);
+
+            if (userOpt.isPresent()) {
+                User supervisor = userOpt.get();
+
+                UserDTO userDTO = UserDTO.builder()
+                        .id(supervisor.getUserId())
+                        .name(supervisor.getName())
+                        .email(supervisor.getEmail())
+                        .phoneNumber(supervisor.getPhone_number())
+                        .role(supervisor.getRole())
+                        .tenantId(supervisor.getTenantId())
+                        .profile(supervisor.getProfile())
+                        .location(supervisor.getLocation())
+                        .build();
+                return ResponseEntity.ok(userDTO);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error retrieving user information");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving profile: " + e.getMessage());
+        }
+    }
+    
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody User userDetails) {
+        try {
+            int userId = getCurrentUserId();
+            Optional<User> userOpt = userService.getUserById(userId);
+
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+
+                // Update only allowed fields
+                if (userDetails.getName() != null) {
+                    user.setName(userDetails.getName());
+                }
+
+                if (userDetails.getPhone_number() != null) {
+                    user.setPhone_number(userDetails.getPhone_number());
+                }
+
+                // Update password if provided
+                if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                    user.setPassword(userDetails.getPassword());
+                }
+
+                // Save the updated supervisor
+                User updatedUser = userService.updateUser(user);
+
+                UserDTO userDTO = UserDTO.builder()
+                        .id(updatedUser.getUserId())
+                        .name(updatedUser.getName())
+                        .email(updatedUser.getEmail())
+                        .role(updatedUser.getRole())
+                        .tenantId(updatedUser.getTenantId())
+                        .build();
+
+                return ResponseEntity.ok(userDTO);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error retrieving user information");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating profile: " + e.getMessage());
+        }
+    }
+
 
 //    @PostMapping
 //    public ResponseEntity<?> createUser(@RequestBody User user) {

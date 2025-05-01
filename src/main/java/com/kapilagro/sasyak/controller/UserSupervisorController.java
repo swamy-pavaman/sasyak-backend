@@ -81,7 +81,8 @@ public class UserSupervisorController {
     }
 
     // Update the supervisor's own profile
-    @PutMapping("/profile")
+
+    /*@PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody User userDetails) {
         try {
             int supervisorId = getCurrentUserId();
@@ -125,9 +126,9 @@ public class UserSupervisorController {
                     .body("Error updating profile: " + e.getMessage());
         }
     }
-
+*/
     // Get supervisor's profile
-    @GetMapping("/profile")
+   /* @GetMapping("/profile")
     public ResponseEntity<?> getProfile() {
         try {
             int supervisorId = getCurrentUserId();
@@ -153,5 +154,5 @@ public class UserSupervisorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error retrieving profile: " + e.getMessage());
         }
-    }
+    }*/
 }

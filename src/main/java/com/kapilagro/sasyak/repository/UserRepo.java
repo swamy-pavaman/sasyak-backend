@@ -25,37 +25,55 @@ public class UserRepo {
 
     private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
         User user = new User();
-        user.setUserId((int) rs.getLong("user_id"));
+        user.setUserId(rs.getInt("user_id"));
         user.setName(rs.getString("name"));
         user.setEmail(rs.getString("email"));
         user.setPassword(rs.getString("password"));
         user.setRole(rs.getString("role"));
 
-        // Check if tenant_id column is present in the result set
+        // tenant_id (UUID)
         try {
-            UUID tenantId = UUID.fromString(rs.getString("tenant_id"));
-            if (!rs.wasNull()) {
+            UUID tenantId = (UUID) rs.getObject("tenant_id");
+            if (tenantId != null) {
                 user.setTenantId(tenantId);
             }
         } catch (Exception e) {
-            // No tenant_id column or it's null
             user.setTenantId(null);
         }
 
+        // phone_number
         try {
             user.setPhone_number(rs.getString("phone_number"));
         } catch (Exception e) {
-            // Phone number might be null
+            user.setPhone_number(null);
         }
 
+        // manager_id (nullable Integer)
         try {
             int managerId = rs.getInt("manager_id");
             if (!rs.wasNull()) {
                 user.setManagerId(managerId);
+            } else {
+                user.setManagerId(null);
             }
         } catch (Exception e) {
-            // Manager ID might be null
+            user.setManagerId(null);
         }
+
+        // profile (nullable)
+        try {
+            user.setProfile(rs.getString("profile"));
+        } catch (Exception e) {
+            user.setProfile(null);
+        }
+
+        // location (nullable)
+        try {
+            user.setLocation(rs.getString("location"));
+        } catch (Exception e) {
+            user.setLocation(null);
+        }
+
 
         return user;
     };

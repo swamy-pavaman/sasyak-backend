@@ -19,6 +19,9 @@ public class User {
     private String phone_number;
     private String role; // "SUPER_ADMIN", "ADMIN", "MANAGER", "SUPERVISOR", "EMPLOYEE"
     private String password;
+    private String profile;
+    private String location;
+
 //    private String oauthProvider;
 //    private String oAuthProviderId;
     private UUID tenantId; // New field to link user to a tenant
