@@ -132,36 +132,77 @@ public class UserRepo {
         }
     }
 
-    @Transactional
-    public boolean update(User user) {
-        String query = "UPDATE users SET name = ?, email = ?, role = ?, phone_number = ?, manager_id = ? WHERE user_id = ?";
+//    @Transactional
+//    public boolean update(User user) {
+//        String query = "UPDATE users SET name = ?, email = ?, role = ?, phone_number = ?, manager_id = ? WHERE user_id = ?";
+//
+//        int updated = template.update(connection -> {
+//            PreparedStatement ps = connection.prepareStatement(query);
+//            ps.setString(1, user.getName());
+//            ps.setString(2, user.getEmail());
+//            ps.setString(3, user.getRole());
+//            ps.setString(4, user.getPhone_number());
+//
+//            if (user.getManagerId() != null) {
+//                ps.setInt(5, user.getManagerId());
+//            } else {
+//                ps.setNull(5, java.sql.Types.INTEGER);
+//            }
+//
+//            ps.setInt(6, user.getUserId());
+//
+//            return ps;
+//        });
+//
+//        // If password is provided, update it separately
+//        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+//            String passwordQuery = "UPDATE users SET password = ? WHERE user_id = ?";
+//            template.update(passwordQuery, user.getPassword(), user.getUserId());
+//        }
+//
+//        return updated > 0;
+//    }
+@Transactional
+public boolean update(User user) {
+    String query = """
+    UPDATE users 
+    SET name = ?, email = ?, role = ?, phone_number = ?, manager_id = ?, location = ?, profile = ? 
+    WHERE user_id = ?
+""";
 
-        int updated = template.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, user.getName());
-            ps.setString(2, user.getEmail());
-            ps.setString(3, user.getRole());
-            ps.setString(4, user.getPhone_number());
+    int updated = template.update(connection -> {
+        PreparedStatement ps = connection.prepareStatement(query);
+        ps.setString(1, user.getName());
+        ps.setString(2, user.getEmail());
+        ps.setString(3, user.getRole());
+        ps.setString(4, user.getPhone_number());
 
-            if (user.getManagerId() != null) {
-                ps.setInt(5, user.getManagerId());
-            } else {
-                ps.setNull(5, java.sql.Types.INTEGER);
-            }
-
-            ps.setInt(6, user.getUserId());
-
-            return ps;
-        });
-
-        // If password is provided, update it separately
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            String passwordQuery = "UPDATE users SET password = ? WHERE user_id = ?";
-            template.update(passwordQuery, user.getPassword(), user.getUserId());
+        // Set manager_id (nullable)
+        if (user.getManagerId() != null) {
+            ps.setInt(5, user.getManagerId());
+        } else {
+            ps.setNull(5, java.sql.Types.INTEGER);
         }
 
-        return updated > 0;
+        // Set location and profile_image
+        ps.setString(6, user.getLocation());
+        ps.setString(7, user.getProfile());
+
+        // Set user_id for WHERE clause
+        ps.setInt(8, user.getUserId());
+
+        return ps;
+    });
+
+    // Update password only if it's provided
+    if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+        String passwordQuery = "UPDATE users SET password = ? WHERE user_id = ?";
+        template.update(passwordQuery, user.getPassword(), user.getUserId());
     }
+
+    return updated > 0;
+}
+
 
     public Optional<User> getUserById(int id) {
         String query = "SELECT * FROM users WHERE user_id = ?";

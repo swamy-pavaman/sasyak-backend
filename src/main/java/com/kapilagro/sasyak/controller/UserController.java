@@ -133,7 +133,7 @@ public class UserController {
                     .body("Error retrieving profile: " + e.getMessage());
         }
     }
-    
+
 
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody User userDetails) {
@@ -144,7 +144,7 @@ public class UserController {
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
 
-                // Update only allowed fields
+                // Update fields
                 if (userDetails.getName() != null) {
                     user.setName(userDetails.getName());
                 }
@@ -153,12 +153,18 @@ public class UserController {
                     user.setPhone_number(userDetails.getPhone_number());
                 }
 
-                // Update password if provided
                 if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
                     user.setPassword(userDetails.getPassword());
                 }
 
-                // Save the updated supervisor
+                if (userDetails.getLocation() != null) {
+                    user.setLocation(userDetails.getLocation());
+                }
+
+                if (userDetails.getProfile() != null) {
+                    user.setProfile(userDetails.getProfile());
+                }
+
                 User updatedUser = userService.updateUser(user);
 
                 UserDTO userDTO = UserDTO.builder()
@@ -167,6 +173,8 @@ public class UserController {
                         .email(updatedUser.getEmail())
                         .role(updatedUser.getRole())
                         .tenantId(updatedUser.getTenantId())
+                        .location(updatedUser.getLocation())
+                        .profile(updatedUser.getProfile())
                         .build();
 
                 return ResponseEntity.ok(userDTO);
@@ -179,7 +187,6 @@ public class UserController {
                     .body("Error updating profile: " + e.getMessage());
         }
     }
-
 
 //    @PostMapping
 //    public ResponseEntity<?> createUser(@RequestBody User user) {
