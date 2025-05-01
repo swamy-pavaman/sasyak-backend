@@ -43,9 +43,9 @@ public class UserRepo {
 
         // phone_number
         try {
-            user.setPhone_number(rs.getString("phone_number"));
+            user.setPhoneNumber(rs.getString("phone_number"));
         } catch (Exception e) {
-            user.setPhone_number(null);
+            user.setPhoneNumber(null);
         }
 
         // manager_id (nullable Integer)
@@ -113,7 +113,7 @@ public class UserRepo {
             } else {
                 ps.setNull(5, java.sql.Types.OTHER);
             }
-            ps.setString(6, user.getPhone_number());
+            ps.setString(6, user.getPhoneNumber());
 
             if (user.getManagerId() != null) {
                 ps.setInt(7, user.getManagerId());
@@ -165,8 +165,8 @@ public class UserRepo {
 @Transactional
 public boolean update(User user) {
     String query = """
-    UPDATE users 
-    SET name = ?, email = ?, role = ?, phone_number = ?, manager_id = ?, location = ?, profile = ? 
+    UPDATE users\s
+    SET name = ?, email = ?, role = ?, phone_number = ?, manager_id = ?, location = ?, profile = ?\s
     WHERE user_id = ?
 """;
 
@@ -175,7 +175,9 @@ public boolean update(User user) {
         ps.setString(1, user.getName());
         ps.setString(2, user.getEmail());
         ps.setString(3, user.getRole());
-        ps.setString(4, user.getPhone_number());
+        ps.setString(4, user.getPhoneNumber());
+
+
 
         // Set manager_id (nullable)
         if (user.getManagerId() != null) {
@@ -193,12 +195,14 @@ public boolean update(User user) {
 
         return ps;
     });
-
+    System.out.println("Updating phone number: " + user.getPhoneNumber());
     // Update password only if it's provided
     if (user.getPassword() != null && !user.getPassword().isEmpty()) {
         String passwordQuery = "UPDATE users SET password = ? WHERE user_id = ?";
         template.update(passwordQuery, user.getPassword(), user.getUserId());
     }
+
+    System.out.println("Update status: " + updated);
 
     return updated > 0;
 }

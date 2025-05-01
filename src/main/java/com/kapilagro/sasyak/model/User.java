@@ -16,7 +16,7 @@ public class User {
     private int userId;
     private String name;
     private String email;
-    private String phone_number;
+    private String phoneNumber;
     private String role; // "SUPER_ADMIN", "ADMIN", "MANAGER", "SUPERVISOR", "EMPLOYEE"
     private String password;
     private String profile;

@@ -142,8 +142,8 @@ public class UserManagerController {
                         existingUser.setName(userDetails.getName());
                     }
 
-                    if (userDetails.getPhone_number() != null) {
-                        existingUser.setPhone_number(userDetails.getPhone_number());
+                    if (userDetails.getPhoneNumber() != null) {
+                        existingUser.setPhoneNumber(userDetails.getPhoneNumber());
                     }
 
                     // Managers cannot change email, role, or tenant

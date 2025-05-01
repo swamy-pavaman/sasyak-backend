@@ -73,7 +73,7 @@ public class UserController {
                         .email(user.getEmail())
                         .role(user.getRole())
                         .tenantId(user.getTenantId())
-                        .phoneNumber(user.getPhone_number())
+                        .phoneNumber(user.getPhoneNumber())
                         .build();
 
                 return ResponseEntity.ok(userDTO);
@@ -117,7 +117,7 @@ public class UserController {
                         .id(supervisor.getUserId())
                         .name(supervisor.getName())
                         .email(supervisor.getEmail())
-                        .phoneNumber(supervisor.getPhone_number())
+                        .phoneNumber(supervisor.getPhoneNumber())
                         .role(supervisor.getRole())
                         .tenantId(supervisor.getTenantId())
                         .profile(supervisor.getProfile())
@@ -149,8 +149,8 @@ public class UserController {
                     user.setName(userDetails.getName());
                 }
 
-                if (userDetails.getPhone_number() != null) {
-                    user.setPhone_number(userDetails.getPhone_number());
+                if (userDetails.getPhoneNumber() != null) {
+                    user.setPhoneNumber(userDetails.getPhoneNumber());
                 }
 
                 if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
@@ -173,6 +173,7 @@ public class UserController {
                         .email(updatedUser.getEmail())
                         .role(updatedUser.getRole())
                         .tenantId(updatedUser.getTenantId())
+                        .phoneNumber(updatedUser.getPhoneNumber())
                         .location(updatedUser.getLocation())
                         .profile(updatedUser.getProfile())
                         .build();

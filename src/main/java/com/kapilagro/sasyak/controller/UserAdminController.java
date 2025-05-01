@@ -105,7 +105,7 @@ public class UserAdminController {
                             .name(user.getName())
                             .email(user.getEmail())
                             .role(user.getRole())
-                            .phoneNumber(user.getPhone_number())
+                            .phoneNumber(user.getPhoneNumber())
                             .tenantId(user.getTenantId())
                             .build();
 
@@ -137,7 +137,7 @@ public class UserAdminController {
                     .name(request.getName())
                     .email(request.getEmail())
                     .password(generatePasswordUtility.generateRandomPassword())
-                    .phone_number(request.getPhone_number())
+                    .phoneNumber(request.getPhone_number())
                     .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
                     .build();
 
@@ -189,8 +189,8 @@ public class UserAdminController {
                         existingUser.setEmail(userDetails.getEmail());
                     }
 
-                    if (userDetails.getPhone_number() != null) {
-                        existingUser.setPhone_number(userDetails.getPhone_number());
+                    if (userDetails.getPhoneNumber() != null) {
+                        existingUser.setPhoneNumber(userDetails.getPhoneNumber());
                     }
 
                     if (userDetails.getRole() != null) {
@@ -206,8 +206,8 @@ public class UserAdminController {
                         existingUser.setPassword(userDetails.getPassword());
                     }
 
-                    if(userDetails.getPhone_number()!=null){
-                        existingUser.setPhone_number(userDetails.getPhone_number());
+                    if(userDetails.getPhoneNumber()!=null){
+                        existingUser.setPhoneNumber(userDetails.getPhoneNumber());
                     }
 
                     // Keep the tenant ID the same
@@ -221,7 +221,7 @@ public class UserAdminController {
                             .name(updatedUser.getName())
                             .email(updatedUser.getEmail())
                             .role(updatedUser.getRole())
-                            .phoneNumber(updatedUser.getPhone_number())
+                            .phoneNumber(updatedUser.getPhoneNumber())
                             .tenantId(updatedUser.getTenantId())
                             .build();
 
