@@ -55,4 +55,6 @@ public class NotificationService {
         String sql = "UPDATE notifications SET is_read = true WHERE user_id = ?";
         jdbcTemplate.update(sql, userId);
     }
+
+
 }

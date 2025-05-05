@@ -49,9 +49,11 @@ public class TaskController {
                     request.getDetailsJson(),
                     request.getImagesJson(),
                     request.getAssignedToId()
+
             );
 
             TaskDTO taskDTO = taskService.convertToDTO(createdTask);
+
 
             return ResponseEntity.status(HttpStatus.CREATED).body(taskDTO);
         } catch (IllegalArgumentException e) {
