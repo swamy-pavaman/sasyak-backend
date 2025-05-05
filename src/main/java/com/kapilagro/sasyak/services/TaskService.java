@@ -43,17 +43,18 @@ public class TaskService {
     // New methods for task management
 
     // Create a new task
+    // In TaskService.java's createTask method, add this after creating the task
     @Transactional
     public Task createTask(UUID tenantId, int createdById, String taskType, String description,
                            String detailsJson, String imagesJson, Integer assignedToId) {
-        // Validate if assignedToId exists and belongs to the tenant
-        if (assignedToId != null) {
-            Optional<User> assignedUser = userRepository.getUserById(assignedToId);
-            if (assignedUser.isEmpty() || !assignedUser.get().getTenantId().equals(tenantId)) {
-                throw new IllegalArgumentException("Assigned user not found or does not belong to this tenant");
-            }
-        }
 
+        System.out.println("==== CREATE TASK START ====");
+        System.out.println("TenantId: " + tenantId);
+        System.out.println("CreatedById: " + createdById);
+        System.out.println("TaskType: " + taskType);
+        System.out.println("Description: " + description);
+
+        // Create the task
         Task task = Task.builder()
                 .tenantId(tenantId)
                 .createdById(createdById)
@@ -65,24 +66,94 @@ public class TaskService {
                 .status("submitted")
                 .build();
 
-        int taskId = taskRepository.save(task);
-        task.setTaskId(taskId);
+        try {
+            int taskId = taskRepository.save(task);
+            task.setTaskId(taskId);
+            System.out.println("Task saved with ID: " + taskId);
 
-        // If task is assigned to someone, notify them
-        if (assignedToId != null) {
-            // Get creator's name for the notification message
+            // Get creator info for notifications
+            System.out.println("Fetching creator info for user ID: " + createdById);
             Optional<User> creator = userRepository.getUserById(createdById);
+            System.out.println("Creator present: " + creator.isPresent());
+
+            if (creator.isPresent()) {
+                User creatorUser = creator.get();
+                System.out.println("Creator Name: " + creatorUser.getName());
+                System.out.println("Creator Role: " + creatorUser.getRole());
+                System.out.println("Creator Role in lowercase: " + creatorUser.getRole().toLowerCase());
+                System.out.println("Is Supervisor check: " + "supervisor".equals(creatorUser.getRole().toLowerCase()));
+            }
+
             String creatorName = creator.map(User::getName).orElse("A user");
 
-            notificationService.createTaskAssignmentNotification(
-                    tenantId,
-                    assignedToId,
-                    taskId,
-                    "New Task Assigned",
-                    creatorName + " has assigned you a new task."
-            );
+            // Check if task creator is a supervisor
+            boolean isSupervisor = creator.isPresent() &&
+                    "supervisor".equals(creator.get().getRole().toLowerCase());
+
+            System.out.println("Is Supervisor: " + isSupervisor);
+
+            if (isSupervisor) {
+                System.out.println("User is a supervisor, creating notifications");
+
+                try {
+                    // Notify all managers in the tenant
+                    System.out.println("Calling notifySupervisorTaskCreation");
+                    notificationService.notifySupervisorTaskCreation(
+                            tenantId,
+                            taskId,
+                            taskType,
+                            description,
+                            createdById,
+                            creatorName
+                    );
+                } catch (Exception e) {
+                    System.out.println("Error in notifySupervisorTaskCreation: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
+                try {
+                    // Notify the supervisor's direct manager
+                    System.out.println("Calling notifySupervisorManagerOfTaskCreation");
+                    notificationService.notifySupervisorManagerOfTaskCreation(
+                            tenantId,
+                            taskId,
+                            taskType,
+                            description,
+                            createdById,
+                            creatorName
+                    );
+                } catch (Exception e) {
+                    System.out.println("Error in notifySupervisorManagerOfTaskCreation: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("User is NOT a supervisor, skipping supervisor notifications");
+            }
+
+            // If task is assigned to someone, notify them
+            if (assignedToId != null) {
+                System.out.println("Task assigned to user ID: " + assignedToId + ", creating assignment notification");
+                try {
+                    notificationService.createTaskAssignmentNotification(
+                            tenantId,
+                            assignedToId,
+                            taskId,
+                            "New Task Assigned",
+                            creatorName + " has assigned you a new task."
+                    );
+                } catch (Exception e) {
+                    System.out.println("Error in createTaskAssignmentNotification: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error in task creation: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-throw to maintain transaction behavior
         }
 
+        System.out.println("==== CREATE TASK END ====");
         return task;
     }
 
@@ -279,7 +350,7 @@ public class TaskService {
         return updated;
     }
 
-    // Convert Task to TaskDTO with user names
+    // Convert Task to TaskDTO with usernames
     public TaskDTO convertToDTO(Task task) {
         // Get creator name
         String createdByName = userRepository.getUserById(task.getCreatedById())

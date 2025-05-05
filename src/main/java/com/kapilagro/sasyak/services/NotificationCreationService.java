@@ -1,8 +1,5 @@
 package com.kapilagro.sasyak.services;
 
-import com.kapilagro.sasyak.model.Task;
-import com.kapilagro.sasyak.model.User;
-import com.kapilagro.sasyak.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -17,11 +14,8 @@ public class NotificationCreationService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private UserRepo userRepo;
-
     /**
-     * Create a notification for a specific user
+     * Creates a notification for a specific user
      *
      * @param tenantId The tenant ID
      * @param userId The user ID to notify
@@ -42,133 +36,106 @@ public class NotificationCreationService {
     }
 
     /**
-     * Notify all managers when a task is created by a supervisor
+     * Notifies managers when a task is created by a supervisor
      *
-     * @param task The task that was created
-     * @param createdByUser The user who created the task
+     * @param tenantId The tenant ID
+     * @param taskId The task ID that was created
+     * @param taskDescription Task description for the notification
+     * @param supervisorId The ID of the supervisor who created the task
+     * @param supervisorName The name of the supervisor for the notification message
      */
     @Transactional
-    public void notifyManagersOfTaskCreatedBySupervisor(Task task, User createdByUser) {
-        // Check if the user who created the task is a supervisor
-        if (createdByUser.getRole().equals("ROLE_SUPERVISOR")) {
-            // Find all managers in the same tenant
-            List<User> managers = userRepo.findByTenantIdAndRole(
-                    createdByUser.getTenantId(), "ROLE_MANAGER");
+    public void notifyManagersOfSupervisorTask(UUID tenantId, int taskId, String taskDescription,
+                                               int supervisorId, String supervisorName) {
+        // Find all managers in the same tenant
+        String managerSql = "SELECT user_id FROM users WHERE tenant_id = ? AND role = 'ROLE_MANAGER'";
+        List<Integer> managerIds = jdbcTemplate.queryForList(managerSql, Integer.class, tenantId);
 
-            String title = "New Task Created by Supervisor";
-            String message = String.format(
-                    "A new task '%s' has been created by supervisor %s %s. Task ID: %d",
-                    task.getDescription(),
-                    createdByUser.getFirstName(),
-                    createdByUser.getLastName(),
-                    task.getTaskId()
-            );
+        String title = "New Task Created by Supervisor";
+        String message = String.format(
+                "A new task '%s' has been created by supervisor %s. Task ID: %d",
+                taskDescription,
+                supervisorName,
+                taskId
+        );
 
-            // Create notification for each manager
-            for (User manager : managers) {
-                createNotification(
-                        createdByUser.getTenantId(),
-                        manager.getUserId(),
-                        title,
-                        message,
-                        task.getTaskId()
-                );
-            }
+        // Create notification for each manager
+        for (Integer managerId : managerIds) {
+            createNotification(tenantId, managerId, title, message, taskId);
         }
     }
 
     /**
-     * Notify a user when a task is assigned to them
+     * Notifies a user when a task is assigned to them
      *
-     * @param task The task that was assigned
-     * @param assignedUser The user to whom the task was assigned
-     * @param assignedByUser The user who assigned the task
+     * @param tenantId The tenant ID
+     * @param assignedUserId The user ID to whom the task was assigned
+     * @param taskId The task ID that was assigned
+     * @param taskDescription Task description for the notification
+     * @param assignedByName The name of the user who assigned the task
      */
     @Transactional
-    public void notifyTaskAssignment(Task task, User assignedUser, User assignedByUser) {
+    public void notifyTaskAssignment(UUID tenantId, int assignedUserId, int taskId,
+                                     String taskDescription, String assignedByName) {
         String title = "New Task Assignment";
         String message = String.format(
-                "You have been assigned a new task '%s' by %s %s. Task ID: %d",
-                task.getDescription(),
-                assignedByUser.getFirstName(),
-                assignedByUser.getLastName(),
-                task.getTaskId()
+                "You have been assigned a new task '%s' by %s. Task ID: %d",
+                taskDescription,
+                assignedByName,
+                taskId
         );
 
-        createNotification(
-                assignedUser.getTenantId(),
-                assignedUser.getUserId(),
-                title,
-                message,
-                task.getTaskId()
+        createNotification(tenantId, assignedUserId, title, message, taskId);
+    }
+
+    /**
+     * Notifies the task creator when a task status is updated
+     *
+     * @param tenantId The tenant ID
+     * @param creatorUserId The user ID who created the task
+     * @param taskId The task ID that was updated
+     * @param taskDescription Task description for the notification
+     * @param newStatus The new status of the task
+     * @param updatedByName The name of the user who updated the task
+     */
+    @Transactional
+    public void notifyTaskStatusChange(UUID tenantId, int creatorUserId, int taskId,
+                                       String taskDescription, String newStatus, String updatedByName) {
+        String title = "Task Status Updated";
+        String message = String.format(
+                "The status of task '%s' has been updated to '%s' by %s",
+                taskDescription,
+                newStatus,
+                updatedByName
         );
+
+        createNotification(tenantId, creatorUserId, title, message, taskId);
     }
 
     /**
-     * Notify the task creator when a task status is updated
+     * Notifies the assignee when advice is added to their task
      *
-     * @param task The updated task
-     * @param updatedByUser The user who updated the task
+     * @param tenantId The tenant ID
+     * @param assigneeUserId The user ID to whom the task is assigned
+     * @param taskId The task ID that received advice
+     * @param taskDescription Task description for the notification
+     * @param adviceGiverName The name of the user who gave the advice
      */
     @Transactional
-    public void notifyTaskStatusChange(Task task, User updatedByUser) {
-        // Notify the task creator
-        if (task.getCreatedBy() != updatedByUser.getUserId()) {
-            User taskCreator = userRepo.findById(task.getCreatedBy()).orElse(null);
-            if (taskCreator != null) {
-                String title = "Task Status Updated";
-                String message = String.format(
-                        "The status of task '%s' has been updated to '%s' by %s %s",
-                        task.getDescription(),
-                        task.getStatus(),
-                        updatedByUser.getFirstName(),
-                        updatedByUser.getLastName()
-                );
+    public void notifyTaskAdvice(UUID tenantId, int assigneeUserId, int taskId,
+                                 String taskDescription, String adviceGiverName) {
+        String title = "New Advice on Your Task";
+        String message = String.format(
+                "You have received new advice on task '%s' from %s",
+                taskDescription,
+                adviceGiverName
+        );
 
-                createNotification(
-                        taskCreator.getTenantId(),
-                        taskCreator.getUserId(),
-                        title,
-                        message,
-                        task.getTaskId()
-                );
-            }
-        }
+        createNotification(tenantId, assigneeUserId, title, message, taskId);
     }
 
     /**
-     * Notify the assignee when advice is added to their task
-     *
-     * @param task The task that received advice
-     * @param adviceText The advice text
-     * @param adviceGivenByUser The user who gave the advice
-     */
-    @Transactional
-    public void notifyTaskAdvice(Task task, String adviceText, User adviceGivenByUser) {
-        if (task.getAssignedTo() != null) {
-            User assignee = userRepo.findById(task.getAssignedTo()).orElse(null);
-            if (assignee != null) {
-                String title = "New Advice on Your Task";
-                String message = String.format(
-                        "You have received new advice on task '%s' from %s %s",
-                        task.getDescription(),
-                        adviceGivenByUser.getFirstName(),
-                        adviceGivenByUser.getLastName()
-                );
-
-                createNotification(
-                        assignee.getTenantId(),
-                        assignee.getUserId(),
-                        title,
-                        message,
-                        task.getTaskId()
-                );
-            }
-        }
-    }
-
-    /**
-     * Mark a notification as read
+     * Marks a notification as read
      *
      * @param notificationId The notification ID to mark as read
      * @return True if successful, false otherwise
@@ -181,7 +148,7 @@ public class NotificationCreationService {
     }
 
     /**
-     * Mark all notifications as read for a user
+     * Marks all notifications as read for a user
      *
      * @param userId The user ID
      * @return The number of notifications marked as read
@@ -193,13 +160,14 @@ public class NotificationCreationService {
     }
 
     /**
-     * Get the count of unread notifications for a user
+     * Gets the count of unread notifications for a user
      *
      * @param userId The user ID
      * @return The count of unread notifications
      */
     public int getUnreadNotificationsCount(int userId) {
         String sql = "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = false";
-        return jdbcTemplate.queryForObject(sql, Integer.class, userId);
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId);
+        return count != null ? count : 0;
     }
 }
