@@ -16,4 +16,5 @@ public class CreateEmployeeRequest {
     private String phone_number;
     private String companyName;
     private String role; // EMPLOYEE, MANAGER, SUPERVISOR
+    private int managerId;
 }
