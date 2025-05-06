@@ -143,7 +143,8 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getTasksAssignedToUser(tenantId, currentUser.getUserId(), page, size);
-            int total = taskService.countTasksByTenant(tenantId);
+//            int total = taskService.countTasksByTenant(tenantId);
+            int total =tasks.size();
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
