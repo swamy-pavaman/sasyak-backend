@@ -49,9 +49,11 @@ public class TaskController {
                     request.getDetailsJson(),
                     request.getImagesJson(),
                     request.getAssignedToId()
+
             );
 
             TaskDTO taskDTO = taskService.convertToDTO(createdTask);
+
 
             return ResponseEntity.status(HttpStatus.CREATED).body(taskDTO);
         } catch (IllegalArgumentException e) {
@@ -141,7 +143,8 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getTasksAssignedToUser(tenantId, currentUser.getUserId(), page, size);
-            int total = taskService.countTasksByTenant(tenantId);
+//            int total = taskService.countTasksByTenant(tenantId);
+            int total =tasks.size();
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)

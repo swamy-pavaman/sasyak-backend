@@ -139,6 +139,7 @@ public class UserAdminController {
                     .password(generatePasswordUtility.generateRandomPassword())
                     .phoneNumber(request.getPhone_number())
                     .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
+                    .managerId(request.getManagerId())
                     .build();
 
             System.out.println("user name :"+employee.getEmail()+"employee password :"+employee.getPassword());
