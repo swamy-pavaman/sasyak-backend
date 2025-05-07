@@ -11,10 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,6 +28,36 @@ public class TaskController {
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return (User) authentication.getPrincipal();
+    }
+
+    // Get tasks by type
+    @GetMapping("/type/{taskType}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERVISOR', 'ADMIN')")
+    public ResponseEntity<?> getTasksByType(
+            @PathVariable String taskType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            User currentUser = getCurrentUser();
+            UUID tenantId = currentUser.getTenantId();
+
+            List<Task> tasks = taskService.getTasksByType(tenantId, taskType, page, size);
+            int total = taskService.countTasksByType(tenantId, taskType);
+
+            List<TaskDTO> taskDTOs = tasks.stream()
+                    .map(taskService::convertToDTO)
+                    .collect(Collectors.toList());
+
+            TaskListResponse response = TaskListResponse.builder()
+                    .tasks(taskDTOs)
+                    .totalCount(total)
+                    .build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving tasks: " + e.getMessage());
+        }
     }
 
 
@@ -340,6 +367,79 @@ public class TaskController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error generating task report: " + e.getMessage());
+        }
+    }
+
+    // Get detailed task report
+    @GetMapping("/report/detailed")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    public ResponseEntity<?> getDetailedTaskReport(
+            @RequestParam(defaultValue = "30") int days) {
+        try {
+            User currentUser = getCurrentUser();
+            UUID tenantId = currentUser.getTenantId();
+
+            Map<String, Object> report = taskService.getDetailedTaskReport(tenantId, days);
+
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating detailed task report: " + e.getMessage());
+        }
+    }
+
+    // Get efficiency report
+    @GetMapping("/report/efficiency")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    public ResponseEntity<?> getEfficiencyReport() {
+        try {
+            User currentUser = getCurrentUser();
+            UUID tenantId = currentUser.getTenantId();
+
+            Map<String, Object> report = taskService.getEfficiencyReport(tenantId);
+
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating efficiency report: " + e.getMessage());
+        }
+    }
+
+    // Get tasks trend report for a specific period
+    @GetMapping("/report/trend")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    public ResponseEntity<?> getTaskTrendReport(
+            @RequestParam(defaultValue = "30") int days) {
+        try {
+            User currentUser = getCurrentUser();
+            UUID tenantId = currentUser.getTenantId();
+
+            Map<String, Object> report = new HashMap<>();
+            report.put("tasksCompleted", taskService.getTasksCompletedPerDay(tenantId, days));
+            report.put("tasksCreated", taskService.getTasksCreatedPerDay(tenantId, days));
+
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating task trend report: " + e.getMessage());
+        }
+    }
+
+    // Get user performance report
+    @GetMapping("/report/performance")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    public ResponseEntity<?> getUserPerformanceReport() {
+        try {
+            User currentUser = getCurrentUser();
+            UUID tenantId = currentUser.getTenantId();
+
+            Map<String, Object> report = new HashMap<>();
+            report.put("avgCompletionTimeByUser", taskService.getTaskCompletionRateByUser(tenantId));
+
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating user performance report: " + e.getMessage());
         }
     }
 }
