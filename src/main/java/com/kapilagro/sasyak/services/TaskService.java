@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -403,6 +404,74 @@ public class TaskService {
         // Average completion time by type
         Map<String, Double> avgCompletionTimes = taskRepository.getAvgCompletionTimeByType(tenantId);
         report.put("avgCompletionTimeByType", avgCompletionTimes);
+
+        return report;
+    }
+
+    // Get tasks by task type
+    public List<Task> getTasksByType(UUID tenantId, String taskType, int page, int size) {
+        return taskRepository.getByTaskType(tenantId, taskType, page, size);
+    }
+
+    // Count tasks by task type
+    public int countTasksByType(UUID tenantId, String taskType) {
+        return taskRepository.countByTaskType(tenantId, taskType);
+    }
+
+    // Get tasks completed per day for last n days
+    public List<Map<String, Object>> getTasksCompletedPerDay(UUID tenantId, int days) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusDays(days);
+        return taskRepository.getTasksCompletedPerDay(tenantId, startDate, endDate);
+    }
+
+    // Get tasks created per day for last n days
+    public List<Map<String, Object>> getTasksCreatedPerDay(UUID tenantId, int days) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusDays(days);
+        return taskRepository.getTasksCreatedPerDay(tenantId, startDate, endDate);
+    }
+
+    // Get task completion rate by user
+    public Map<String, Object> getTaskCompletionRateByUser(UUID tenantId) {
+        return taskRepository.getTaskCompletionRateByUser(tenantId);
+    }
+
+    // Get detailed task report
+    public Map<String, Object> getDetailedTaskReport(UUID tenantId, int days) {
+        Map<String, Object> report = new HashMap<>();
+
+        // Basic report data
+        report.putAll(getTaskReport(tenantId));
+
+        // Add trend data
+        report.put("tasksCompletedTrend", getTasksCompletedPerDay(tenantId, days));
+        report.put("tasksCreatedTrend", getTasksCreatedPerDay(tenantId, days));
+
+        // Add user performance data
+        report.put("avgCompletionTimeByUser", taskRepository.getAvgCompletionTimeByUser(tenantId));
+        report.put("taskCompletionRateByUser", getTaskCompletionRateByUser(tenantId));
+
+        return report;
+    }
+
+    // Get efficiency report (completion time vs expected)
+    public Map<String, Object> getEfficiencyReport(UUID tenantId) {
+        Map<String, Object> report = new HashMap<>();
+
+        // Get average completion times by type
+        Map<String, Double> avgTimesByType = taskRepository.getAvgCompletionTimeByType(tenantId);
+        report.put("avgTimesByType", avgTimesByType);
+
+        // Get average completion times by user
+        Map<String, Double> avgTimesByUser = taskRepository.getAvgCompletionTimeByUser(tenantId);
+        report.put("avgTimesByUser", avgTimesByUser);
+
+        // Get the best performers (users with the fastest completion times)
+        report.put("bestPerformers", avgTimesByUser.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .limit(5)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
         return report;
     }

@@ -1,5 +1,7 @@
 package com.kapilagro.sasyak.services;
 
+import com.kapilagro.sasyak.model.GetManagerListResponse;
+import com.kapilagro.sasyak.model.GetSupervisorsListResponse;
 import com.kapilagro.sasyak.model.User;
 import com.kapilagro.sasyak.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,10 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -63,6 +63,8 @@ public class UserService {
         return userId;
     }
 
+
+
     // For development purposes, set the encoded password for the test user
     public void setEncodedPasswordForTestUser(String email) {
         User user = userRepo.getUserByEmail(email);
@@ -85,6 +87,27 @@ public class UserService {
     // Get users by tenant ID and role (case-insensitive)
     public List<User> getUsersByTenantAndRole(UUID tenantId, String role) {
         return userRepo.getUsersByTenantAndRole(tenantId, role);
+    }
+
+    // Add these methods to your UserService class
+    public List<GetManagerListResponse> getManagersList(UUID tenantId) {
+        List<Map<String, Object>> managersData = userRepo.getManagersListByTenant(tenantId);
+        return managersData.stream()
+                .map(data -> new GetManagerListResponse(
+                        ((Number) data.get("user_id")).intValue(),
+                        (String) data.get("name")
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public List<GetSupervisorsListResponse> getSupervisorsList(UUID tenantId) {
+        List<Map<String, Object>> supervisorsData = userRepo.getSupervisorsListByTenant(tenantId);
+        return supervisorsData.stream()
+                .map(data -> new GetSupervisorsListResponse(
+                        ((Number) data.get("user_id")).intValue(),
+                        (String) data.get("name")
+                ))
+                .collect(Collectors.toList());
     }
 
     // Get paginated users by tenant ID and role (case-insensitive)

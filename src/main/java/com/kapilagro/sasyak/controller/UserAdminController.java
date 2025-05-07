@@ -58,6 +58,29 @@ public class UserAdminController {
         return currentUser.getTenantId();
     }
 
+    @GetMapping("/manager-list")
+    public ResponseEntity<List<GetManagerListResponse>> getManagerList() {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+            List<GetManagerListResponse> managers = userService.getManagersList(tenantId);
+            return ResponseEntity.ok(managers);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/supervisor-list")
+    public ResponseEntity<List<GetSupervisorsListResponse>> getSupervisorList() {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+            List<GetSupervisorsListResponse> supervisors = userService.getSupervisorsList(tenantId);
+            return ResponseEntity.ok(supervisors);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
     // Get all users for the current tenant
     @GetMapping
     public ResponseEntity<GetEmployeesResponse> getAllUsers() {

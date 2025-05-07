@@ -11,10 +11,9 @@ import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public class TaskRepo {
@@ -226,4 +225,71 @@ public class TaskRepo {
 
         return avgTimes;
     }
+    // Get tasks by task type
+    public List<Task> getByTaskType(UUID tenantId, String taskType, int page, int size) {
+        String sql = "SELECT * FROM tasks WHERE tenant_id = ? AND UPPER(task_type) = UPPER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        int offset = page * size;
+        return jdbcTemplate.query(sql, taskRowMapper, tenantId, taskType, size, offset);
+    }
+
+    // Count tasks by task type (for pagination total)
+    public int countByTaskType(UUID tenantId, String taskType) {
+        String sql = "SELECT COUNT(*) FROM tasks WHERE tenant_id = ? AND UPPER(task_type) = UPPER(?)";
+        return jdbcTemplate.queryForObject(sql, Integer.class, tenantId, taskType);
+    }
+
+    // Get tasks completed per day for date range
+    public List<Map<String, Object>> getTasksCompletedPerDay(UUID tenantId, LocalDateTime startDate, LocalDateTime endDate) {
+        String sql = "SELECT DATE(updated_at) as date, COUNT(*) as count FROM tasks " +
+                "WHERE tenant_id = ? AND status = 'implemented' AND updated_at BETWEEN ? AND ? " +
+                "GROUP BY DATE(updated_at) ORDER BY date";
+        return jdbcTemplate.queryForList(sql, tenantId, Timestamp.valueOf(startDate), Timestamp.valueOf(endDate));
+    }
+
+    // Get tasks created per day for date range
+    public List<Map<String, Object>> getTasksCreatedPerDay(UUID tenantId, LocalDateTime startDate, LocalDateTime endDate) {
+        String sql = "SELECT DATE(created_at) as date, COUNT(*) as count FROM tasks " +
+                "WHERE tenant_id = ? AND created_at BETWEEN ? AND ? " +
+                "GROUP BY DATE(created_at) ORDER BY date";
+        return jdbcTemplate.queryForList(sql, tenantId, Timestamp.valueOf(startDate), Timestamp.valueOf(endDate));
+    }
+
+    // Get average completion time by user
+    public Map<String, Double> getAvgCompletionTimeByUser(UUID tenantId) {
+        String sql = "SELECT u.name, AVG(EXTRACT(EPOCH FROM (t.updated_at - t.created_at))/86400) as avg_days " +
+                "FROM tasks t JOIN users u ON t.assigned_to_id = u.user_id " +
+                "WHERE t.tenant_id = ? AND t.status = 'implemented' GROUP BY u.name";
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
+
+        Map<String, Double> avgTimes = new java.util.HashMap<>();
+        for (Map<String, Object> row : rows) {
+            String name = (String) row.get("name");
+            Double avgDays = ((Number) row.get("avg_days")).doubleValue();
+            avgTimes.put(name, avgDays);
+        }
+
+        return avgTimes;
+    }
+
+    // Get task completion rate by user
+    public Map<String, Object> getTaskCompletionRateByUser(UUID tenantId) {
+        String sql = "SELECT u.name, " +
+                "COUNT(CASE WHEN t.status = 'implemented' THEN 1 ELSE NULL END) as completed, " +
+                "COUNT(*) as total, " +
+                "ROUND(COUNT(CASE WHEN t.status = 'implemented' THEN 1 ELSE NULL END)::NUMERIC / COUNT(*)::NUMERIC * 100, 2) as rate " +
+                "FROM tasks t JOIN users u ON t.assigned_to_id = u.user_id " +
+                "WHERE t.tenant_id = ? GROUP BY u.name";
+        return jdbcTemplate.queryForList(sql, tenantId).stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row.get("name"),
+                        row -> {
+                            Map<String, Object> result = new HashMap<>();
+                            result.put("completed", ((Number) row.get("completed")).intValue());
+                            result.put("total", ((Number) row.get("total")).intValue());
+                            result.put("rate", ((Number) row.get("rate")).doubleValue());
+                            return result;
+                        }
+                ));
+    }
+
 }
