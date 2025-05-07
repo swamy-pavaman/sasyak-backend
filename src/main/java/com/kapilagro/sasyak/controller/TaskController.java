@@ -33,6 +33,8 @@ public class TaskController {
         return (User) authentication.getPrincipal();
     }
 
+
+
     // Create a new task
     @PostMapping
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERVISOR', 'ADMIN')")

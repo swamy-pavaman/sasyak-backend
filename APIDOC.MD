@@ -456,7 +456,7 @@ The current API version is v1, which is implicit in the base URL. Future version
     "email": "string",
     "phone_number": "string",
     "role": "string",
-    "companyName": "string"
+  "managerId": "String"
   }
   ```
 - **Response**:
@@ -585,6 +585,36 @@ The current API version is v1, which is implicit in the base URL. Future version
     "currentPage": "integer"
   }
   ```
+
+### Get Manager List
+- **URL**: `/api/admin/users/manager-list`
+- **Method**: `GET`
+- **Description**: Get a streamlined list of managers with only ID and name
+- **Access**: Requires ADMIN role
+- **Response**:
+  - Status Code: 200 OK
+  ```json
+  [
+    {
+      "manageId": "integer",
+      "managerName": "string"
+    }
+  ]
+
+### Get supervisor List
+- **URL**: `/api/admin/users/supervisor-list`
+- **Method**: `GET`
+- **Description**: Get a streamlined list of supervisor with only ID and name
+- **Access**: Requires ADMIN role
+- **Response**:
+  - Status Code: 200 OK
+  ```json
+  [
+    {
+      "supervisorId": "integer",
+      "supervisorName": "string"
+    }
+  ]
 
 ### Get Supervisors
 - **URL**: `/api/admin/users/supervisors`

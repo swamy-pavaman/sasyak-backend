@@ -23,6 +23,17 @@ public class UserRepo {
     @Autowired
     JdbcTemplate template;
 
+    // Add these methods to your UserRepo class
+    public List<Map<String, Object>> getManagersListByTenant(UUID tenantId) {
+        String query = "SELECT user_id, name FROM users WHERE tenant_id = ? AND UPPER(role) = 'MANAGER'";
+        return template.queryForList(query, tenantId);
+    }
+
+    public List<Map<String, Object>> getSupervisorsListByTenant(UUID tenantId) {
+        String query = "SELECT user_id, name FROM users WHERE tenant_id = ? AND UPPER(role) = 'SUPERVISOR'";
+        return template.queryForList(query, tenantId);
+    }
+
     private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
         User user = new User();
         user.setUserId(rs.getInt("user_id"));
@@ -30,7 +41,6 @@ public class UserRepo {
         user.setEmail(rs.getString("email"));
         user.setPassword(rs.getString("password"));
         user.setRole(rs.getString("role"));
-
         // tenant_id (UUID)
         try {
             UUID tenantId = (UUID) rs.getObject("tenant_id");
