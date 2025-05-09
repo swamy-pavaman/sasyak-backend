@@ -545,7 +545,6 @@ public class UserAdminController {
             DashBoardResponse dashboardStats = adminService.getDashboardStats(tenantId);
             return ResponseEntity.ok(dashboardStats);
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(DashBoardResponse.builder()
                             .errorMessage("Failed to fetch dashboard stats: " + e.getMessage())

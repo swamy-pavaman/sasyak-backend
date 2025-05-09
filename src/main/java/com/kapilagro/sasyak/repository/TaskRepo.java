@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.postgresql.util.PGobject;
 
 @Repository
 public class TaskRepo {
@@ -53,20 +54,45 @@ public class TaskRepo {
     }
 
 
-    // Get task status breakdown
+//    // Get task status breakdown
+//    public Map<String, Integer> getTaskStatusBreakdown(UUID tenantId) {
+//        String sql = "SELECT status, COUNT(*) as count FROM tasks WHERE tenant_id = ? GROUP BY status";
+//        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
+//
+//        Map<String, Integer> statusBreakdown = new java.util.HashMap<>();
+//        for (Map<String, Object> row : rows) {
+//            String status = (String) row.get("status");
+//            Integer count = ((Number) row.get("count")).intValue();
+//            statusBreakdown.put(status, count);
+//        }
+//
+//        return statusBreakdown;
+//    }
+
+
     public Map<String, Integer> getTaskStatusBreakdown(UUID tenantId) {
         String sql = "SELECT status, COUNT(*) as count FROM tasks WHERE tenant_id = ? GROUP BY status";
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
 
-        Map<String, Integer> statusBreakdown = new java.util.HashMap<>();
+        Map<String, Integer> statusBreakdown = new HashMap<>();
         for (Map<String, Object> row : rows) {
-            String status = (String) row.get("status");
+            Object statusObj = row.get("status");
+            String status;
+
+            if (statusObj instanceof PGobject) {
+                status = ((PGobject) statusObj).getValue();
+            } else {
+                status = String.valueOf(statusObj);
+            }
+
             Integer count = ((Number) row.get("count")).intValue();
             statusBreakdown.put(status, count);
         }
 
         return statusBreakdown;
     }
+
+
 
     // Count recent tasks
     public int countRecentByTenantId(UUID tenantId, int days) {
