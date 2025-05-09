@@ -191,7 +191,6 @@ public class AuthController {
             if (!jwtUtil.validateRefreshToken(request.getRefreshToken(), userDetails)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired refresh token");
             }
-
             // Generate new access token
             String accessToken = jwtUtil.generateAccessToken(userDetails);
 
