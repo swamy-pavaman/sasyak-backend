@@ -38,6 +38,9 @@ public class TaskRepo {
                 .description(rs.getString("description"))
                 .implementationJson(rs.getString("implementation"))
                 .status(rs.getString("status"))
+                .advice(rs.getString("advice")) // Get advice as plain text
+                .adviceCreatedAt(rs.getTimestamp("advice_created_at") != null ?
+                        rs.getTimestamp("advice_created_at").toLocalDateTime() : null) // Get advice creation date
                 .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                 .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
                 .build();
@@ -48,6 +51,7 @@ public class TaskRepo {
         String sql = "SELECT COUNT(*) FROM tasks WHERE tenant_id = ?";
         return jdbcTemplate.queryForObject(sql, Integer.class, tenantId);
     }
+
 
     // Get task status breakdown
     public Map<String, Integer> getTaskStatusBreakdown(UUID tenantId) {
@@ -73,8 +77,8 @@ public class TaskRepo {
     // Save new task
     public int save(Task task) {
         String sql = "INSERT INTO tasks " +
-                "(tenant_id, created_by_id, assigned_to_id, task_type, details_json, images, description, implementation, status) " +
-                "VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?)";
+                "(tenant_id, created_by_id, assigned_to_id, task_type, details_json, images, description, implementation, status, advice) " +
+                "VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -95,6 +99,7 @@ public class TaskRepo {
             ps.setString(7, task.getDescription());
             ps.setString(8, task.getImplementationJson() != null ? task.getImplementationJson() : "{}");
             ps.setString(9, task.getStatus() != null ? task.getStatus() : "submitted");
+            ps.setString(10, task.getAdvice() != null ? task.getAdvice() : ""); // Plain text advice
 
             return ps;
         }, keyHolder);
@@ -147,21 +152,21 @@ public class TaskRepo {
 
     // Update task status
     public boolean updateStatus(int taskId, String status) {
-        String sql = "UPDATE tasks SET status = ? WHERE task_id = ?";
+        String sql = "UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE task_id = ?";
         int updated = jdbcTemplate.update(sql, status, taskId);
         return updated > 0;
     }
 
     // Update task implementation
     public boolean updateImplementation(int taskId, String implementationJson) {
-        String sql = "UPDATE tasks SET implementation = ?::jsonb, status = 'implemented' WHERE task_id = ?";
+        String sql = "UPDATE tasks SET implementation = ?::jsonb, status = 'implemented', updated_at = CURRENT_TIMESTAMP WHERE task_id = ?";
         int updated = jdbcTemplate.update(sql, implementationJson, taskId);
         return updated > 0;
     }
 
     // Assign task to user
     public boolean assignTask(int taskId, int assignedToId) {
-        String sql = "UPDATE tasks SET assigned_to_id = ? WHERE task_id = ?";
+        String sql = "UPDATE tasks SET assigned_to_id = ?, updated_at = CURRENT_TIMESTAMP WHERE task_id = ?";
         int updated = jdbcTemplate.update(sql, assignedToId, taskId);
         return updated > 0;
     }
@@ -225,6 +230,7 @@ public class TaskRepo {
 
         return avgTimes;
     }
+
     // Get tasks by task type
     public List<Task> getByTaskType(UUID tenantId, String taskType, int page, int size) {
         String sql = "SELECT * FROM tasks WHERE tenant_id = ? AND UPPER(task_type) = UPPER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
@@ -291,5 +297,4 @@ public class TaskRepo {
                         }
                 ));
     }
-
 }
