@@ -286,7 +286,7 @@ public boolean update(User user) {
 
     public int countUsersByTenant(UUID tenantId) {
         String query = "SELECT COUNT(*) FROM users WHERE tenant_id = ?";
-        return template.queryForObject(query, Integer.class, tenantId);
+        return template.queryForObject(query, Integer.class, tenantId)-1;
     }
 
     public int countUsersByTenantAndRole(UUID tenantId, String role) {
