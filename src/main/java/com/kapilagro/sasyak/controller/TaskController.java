@@ -223,7 +223,7 @@ public class TaskController {
 
     // Get tasks by status
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN','SUPERVISOR)")
     public ResponseEntity<?> getTasksByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "0") int page,
