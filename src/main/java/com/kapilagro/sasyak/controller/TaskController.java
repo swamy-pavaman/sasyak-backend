@@ -3,6 +3,7 @@ package com.kapilagro.sasyak.controller;
 import com.kapilagro.sasyak.model.*;
 import com.kapilagro.sasyak.services.TaskAdviceService;
 import com.kapilagro.sasyak.services.TaskService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
@@ -222,17 +224,61 @@ public class TaskController {
     }
 
     // Get tasks by status
+//    @GetMapping("/status/{status}")
+//    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN','SUPERVISOR)")
+//    public ResponseEntity<?> getTasksByStatus(
+//            @PathVariable String status,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size) {
+//        try {
+//            User currentUser = getCurrentUser();
+//            UUID tenantId = currentUser.getTenantId();
+//
+//            List<Task> tasks = taskService.getTasksByStatus(tenantId, status, page, size);
+//
+//            List<TaskDTO> taskDTOs = tasks.stream()
+//                    .map(taskService::convertToDTO)
+//                    .collect(Collectors.toList());
+//
+//            TaskListResponse response = TaskListResponse.builder()
+//                    .tasks(taskDTOs)
+//                    .totalCount(taskDTOs.size()) // Simple count of returned tasks
+//                    .build();
+//
+//            return ResponseEntity.ok(response);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("Error retrieving tasks: " + e.getMessage());
+//        }
+//    }
+
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN','SUPERVISOR)")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'SUPERVISOR')") // ✅ Fixed syntax
     public ResponseEntity<?> getTasksByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
+            log.debug("Fetching tasks with status: {}, page: {}, size: {}", status, page, size);
+
             User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                log.error("getCurrentUser() returned null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("User not authenticated.");
+            }
+
             UUID tenantId = currentUser.getTenantId();
+            log.debug("Current User: {}, Tenant ID: {}", currentUser.getName(), tenantId);
+
+            if (tenantId == null) {
+                log.error("Tenant ID is null for user: {}", currentUser.getName());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Tenant information is missing.");
+            }
 
             List<Task> tasks = taskService.getTasksByStatus(tenantId, status, page, size);
+            log.debug("Fetched {} tasks for tenant {}", tasks.size(), tenantId);
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -245,10 +291,12 @@ public class TaskController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            log.error("Exception occurred while retrieving tasks", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error retrieving tasks: " + e.getMessage());
         }
     }
+
 
     // Update task status
     @PutMapping("/{taskId}/status")
