@@ -42,9 +42,11 @@ public class TaskController {
         try {
             User currentUser = getCurrentUser();
             UUID tenantId = currentUser.getTenantId();
-
+            // TODO change this to only send supervisors tasks only
             List<Task> tasks = taskService.getTasksByType(tenantId, taskType, page, size);
-            int total = taskService.countTasksByType(tenantId, taskType);
+//            int total = taskService.countTasksByType(tenantId, taskType);
+            int total =tasks.size();
+
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)

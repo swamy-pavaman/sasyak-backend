@@ -45,6 +45,120 @@ public class TaskService {
 
     // Create a new task
     // In TaskService.java's createTask method, add this after creating the task
+//    @Transactional
+//    public Task createTask(UUID tenantId, int createdById, String taskType, String description,
+//                           String detailsJson, String imagesJson, Integer assignedToId) {
+//
+//        System.out.println("==== CREATE TASK START ====");
+//        System.out.println("TenantId: " + tenantId);
+//        System.out.println("CreatedById: " + createdById);
+//        System.out.println("TaskType: " + taskType);
+//        System.out.println("Description: " + description);
+//
+//        // Create the task
+//        Task task = Task.builder()
+//                .tenantId(tenantId)
+//                .createdById(createdById)
+//                .assignedToId(assignedToId)
+//                .taskType(taskType)
+//                .description(description)
+//                .detailsJson(detailsJson)
+//                .imagesJson(imagesJson)
+//                .status("submitted")
+//                .build();
+//
+//        try {
+//            int taskId = taskRepository.save(task);
+//            task.setTaskId(taskId);
+//            System.out.println("Task saved with ID: " + taskId);
+//
+//            // Get creator info for notifications
+//            System.out.println("Fetching creator info for user ID: " + createdById);
+//            Optional<User> creator = userRepository.getUserById(createdById);
+//            System.out.println("Creator present: " + creator.isPresent());
+//
+//            if (creator.isPresent()) {
+//                User creatorUser = creator.get();
+//                System.out.println("Creator Name: " + creatorUser.getName());
+//                System.out.println("Creator Role: " + creatorUser.getRole());
+//                System.out.println("Creator Role in lowercase: " + creatorUser.getRole().toLowerCase());
+//                System.out.println("Is Supervisor check: " + "supervisor".equals(creatorUser.getRole().toLowerCase()));
+//            }
+//
+//            String creatorName = creator.map(User::getName).orElse("A user");
+//
+//            // Check if task creator is a supervisor
+//            boolean isSupervisor = creator.isPresent() &&
+//                    "supervisor".equals(creator.get().getRole().toLowerCase());
+//
+//            System.out.println("Is Supervisor: " + isSupervisor);
+//
+//            if (isSupervisor) {
+//                System.out.println("User is a supervisor, creating notifications");
+//
+//                try {
+//                    // Notify all managers in the tenant
+//                    System.out.println("Calling notifySupervisorTaskCreation");
+//                    notificationService.notifySupervisorTaskCreation(
+//                            tenantId,
+//                            taskId,
+//                            taskType,
+//                            description,
+//                            createdById,
+//                            creatorName
+//                    );
+//                } catch (Exception e) {
+//                    System.out.println("Error in notifySupervisorTaskCreation: " + e.getMessage());
+//                    e.printStackTrace();
+//                }
+//
+//                try {
+//                    // Notify the supervisor's direct manager
+//                    System.out.println("Calling notifySupervisorManagerOfTaskCreation");
+//                    notificationService.notifySupervisorManagerOfTaskCreation(
+//                            tenantId,
+//                            taskId,
+//                            taskType,
+//                            description,
+//                            createdById,
+//                            creatorName
+//                    );
+//                } catch (Exception e) {
+//                    System.out.println("Error in notifySupervisorManagerOfTaskCreation: " + e.getMessage());
+//                    e.printStackTrace();
+//                }
+//            } else {
+//                System.out.println("User is NOT a supervisor, skipping supervisor notifications");
+//            }
+//
+//            // If task is assigned to someone, notify them
+//            if (assignedToId != null) {
+//                System.out.println("Task assigned to user ID: " + assignedToId + ", creating assignment notification");
+//                try {
+//                    notificationService.createTaskAssignmentNotification(
+//                            tenantId,
+//                            assignedToId,
+//                            taskId,
+//                            "New Task Assigned",
+//                            creatorName + " has assigned you a new task."
+//                    );
+//                } catch (Exception e) {
+//                    System.out.println("Error in createTaskAssignmentNotification: " + e.getMessage());
+//                    e.printStackTrace();
+//                }
+//            }
+//
+//        } catch (Exception e) {
+//            System.out.println("Error in task creation: " + e.getMessage());
+//            e.printStackTrace();
+//            throw e; // Re-throw to maintain transaction behavior
+//        }
+//
+//        System.out.println("==== CREATE TASK END ====");
+//        return task;
+//    }
+
+
     @Transactional
     public Task createTask(UUID tenantId, int createdById, String taskType, String description,
                            String detailsJson, String imagesJson, Integer assignedToId) {
@@ -77,44 +191,23 @@ public class TaskService {
             Optional<User> creator = userRepository.getUserById(createdById);
             System.out.println("Creator present: " + creator.isPresent());
 
-            if (creator.isPresent()) {
-                User creatorUser = creator.get();
-                System.out.println("Creator Name: " + creatorUser.getName());
-                System.out.println("Creator Role: " + creatorUser.getRole());
-                System.out.println("Creator Role in lowercase: " + creatorUser.getRole().toLowerCase());
-                System.out.println("Is Supervisor check: " + "supervisor".equals(creatorUser.getRole().toLowerCase()));
-            }
-
             String creatorName = creator.map(User::getName).orElse("A user");
+            String creatorRole = creator.map(User::getRole).orElse("");
 
-            // Check if task creator is a supervisor
-            boolean isSupervisor = creator.isPresent() &&
-                    "supervisor".equals(creator.get().getRole().toLowerCase());
+            System.out.println("Creator Name: " + creatorName);
+            System.out.println("Creator Role: " + creatorRole);
+
+            // Check if task creator is a supervisor or manager
+            boolean isSupervisor = "supervisor".equals(creator.get().getRole().toLowerCase());
+            boolean isManager = "MANAGER".equals(creatorRole);
 
             System.out.println("Is Supervisor: " + isSupervisor);
+            System.out.println("Is Manager: " + isManager);
 
             if (isSupervisor) {
-                System.out.println("User is a supervisor, creating notifications");
-
+                // For supervisor-created tasks, notify only their direct manager
+                System.out.println("User is a supervisor, notifying their manager");
                 try {
-                    // Notify all managers in the tenant
-                    System.out.println("Calling notifySupervisorTaskCreation");
-                    notificationService.notifySupervisorTaskCreation(
-                            tenantId,
-                            taskId,
-                            taskType,
-                            description,
-                            createdById,
-                            creatorName
-                    );
-                } catch (Exception e) {
-                    System.out.println("Error in notifySupervisorTaskCreation: " + e.getMessage());
-                    e.printStackTrace();
-                }
-
-                try {
-                    // Notify the supervisor's direct manager
-                    System.out.println("Calling notifySupervisorManagerOfTaskCreation");
                     notificationService.notifySupervisorManagerOfTaskCreation(
                             tenantId,
                             taskId,
@@ -127,13 +220,9 @@ public class TaskService {
                     System.out.println("Error in notifySupervisorManagerOfTaskCreation: " + e.getMessage());
                     e.printStackTrace();
                 }
-            } else {
-                System.out.println("User is NOT a supervisor, skipping supervisor notifications");
-            }
-
-            // If task is assigned to someone, notify them
-            if (assignedToId != null) {
-                System.out.println("Task assigned to user ID: " + assignedToId + ", creating assignment notification");
+            } else if (isManager && assignedToId != null) {
+                // For manager-created tasks, notify the assigned supervisor
+                System.out.println("User is a manager, notifying assigned supervisor ID: " + assignedToId);
                 try {
                     notificationService.createTaskAssignmentNotification(
                             tenantId,
@@ -146,6 +235,8 @@ public class TaskService {
                     System.out.println("Error in createTaskAssignmentNotification: " + e.getMessage());
                     e.printStackTrace();
                 }
+            } else {
+                System.out.println("No specific notification required for this role or assignment");
             }
 
         } catch (Exception e) {
@@ -157,6 +248,7 @@ public class TaskService {
         System.out.println("==== CREATE TASK END ====");
         return task;
     }
+
 
     // Get a specific task
     public Optional<Task> getTaskById(int taskId) {
