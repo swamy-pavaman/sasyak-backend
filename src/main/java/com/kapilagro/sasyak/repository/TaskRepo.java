@@ -177,11 +177,21 @@ public class TaskRepo {
     }
 
     // Update task status
-    public boolean updateStatus(int taskId, String status) {
-        String sql = "UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE task_id = ?";
-        int updated = jdbcTemplate.update(sql, status, taskId);
+    public boolean updateStatus(int taskId, String status, String advice) {
+        String sql;
+        int updated;
+
+        if (advice != null && !advice.trim().isEmpty()) {
+            sql = "UPDATE tasks SET status = ?, advice = ?, updated_at = CURRENT_TIMESTAMP WHERE task_id = ?";
+            updated = jdbcTemplate.update(sql, status, advice, taskId);
+        } else {
+            sql = "UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE task_id = ?";
+            updated = jdbcTemplate.update(sql, status, taskId);
+        }
+
         return updated > 0;
     }
+
 
     // Update task implementation
     public boolean updateImplementation(int taskId, String implementationJson) {

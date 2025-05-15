@@ -316,7 +316,7 @@ public class TaskController {
                         .body("You don't have permission to update this task");
             }
 
-            boolean updated = taskService.updateTaskStatus(taskId, request.getStatus(), currentUser.getUserId());
+            boolean updated = taskService.updateTaskStatus(taskId, request.getStatus(),request.getAdvice(), currentUser.getUserId());
 
             if (updated) {
                 Optional<Task> updatedTask = taskService.getTaskById(taskId);
