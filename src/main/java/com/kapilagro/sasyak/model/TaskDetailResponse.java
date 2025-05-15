@@ -13,5 +13,5 @@ import java.util.List;
 @AllArgsConstructor
 public class TaskDetailResponse {
     private TaskDTO task;
-    private List<TaskAdviceDTO> advices;
+    private String advice;
 }

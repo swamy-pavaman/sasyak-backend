@@ -118,11 +118,11 @@ public class TaskController {
                 TaskDTO taskDTO = taskService.convertToDTO(task);
 
                 // Get advice for this task
-                List<TaskAdviceDTO> advices = taskAdviceService.getAdviceForTaskAsDTO(taskId);
+                //List<TaskAdviceDTO> advices = taskAdviceService.getAdviceForTaskAsDTO(taskId);
 
                 TaskDetailResponse response = TaskDetailResponse.builder()
                         .task(taskDTO)
-                        .advices(advices)
+                        .advice(taskOpt.get().getAdvice())
                         .build();
 
                 return ResponseEntity.ok(response);
