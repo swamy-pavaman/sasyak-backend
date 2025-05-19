@@ -20,4 +20,3 @@ public class AdviceService {
         return taskAdviceRepository.countByTenantId(tenantId);
     }
 }
-

@@ -42,11 +42,8 @@ public class TaskController {
         try {
             User currentUser = getCurrentUser();
             UUID tenantId = currentUser.getTenantId();
-            // TODO change this to only send supervisors tasks only
             List<Task> tasks = taskService.getTasksByType(tenantId, taskType, page, size);
-//            int total = taskService.countTasksByType(tenantId, taskType);
-            int total =tasks.size();
-
+            int total = taskService.countTasksByType(tenantId, taskType);
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -64,8 +61,6 @@ public class TaskController {
         }
     }
 
-
-
     // Create a new task
     @PostMapping
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERVISOR', 'ADMIN')")
@@ -82,11 +77,9 @@ public class TaskController {
                     request.getDetailsJson(),
                     request.getImagesJson(),
                     request.getAssignedToId()
-
             );
 
             TaskDTO taskDTO = taskService.convertToDTO(createdTask);
-
 
             return ResponseEntity.status(HttpStatus.CREATED).body(taskDTO);
         } catch (IllegalArgumentException e) {
@@ -147,8 +140,7 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getTasksCreatedByUser(tenantId, currentUser.getUserId(), page, size);
-//            int total = taskService.countTasksByTenant(tenantId);
-            int total =tasks.size();
+            int total = taskService.countByCreatedBy(tenantId, currentUser.getUserId());
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -177,8 +169,7 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getTasksAssignedToUser(tenantId, currentUser.getUserId(), page, size);
-//            int total = taskService.countTasksByTenant(tenantId);
-            int total =tasks.size();
+            int total = taskService.countByAssignedTo(tenantId, currentUser.getUserId());
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -207,7 +198,7 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getAllTasks(tenantId, page, size);
-            int total =tasks.size();
+            int total = taskService.countTasksByTenant(tenantId);
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -226,36 +217,8 @@ public class TaskController {
     }
 
     // Get tasks by status
-//    @GetMapping("/status/{status}")
-//    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN','SUPERVISOR)")
-//    public ResponseEntity<?> getTasksByStatus(
-//            @PathVariable String status,
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size) {
-//        try {
-//            User currentUser = getCurrentUser();
-//            UUID tenantId = currentUser.getTenantId();
-//
-//            List<Task> tasks = taskService.getTasksByStatus(tenantId, status, page, size);
-//
-//            List<TaskDTO> taskDTOs = tasks.stream()
-//                    .map(taskService::convertToDTO)
-//                    .collect(Collectors.toList());
-//
-//            TaskListResponse response = TaskListResponse.builder()
-//                    .tasks(taskDTOs)
-//                    .totalCount(taskDTOs.size()) // Simple count of returned tasks
-//                    .build();
-//
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body("Error retrieving tasks: " + e.getMessage());
-//        }
-//    }
-
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'SUPERVISOR')") // ✅ Fixed syntax
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'SUPERVISOR')")
     public ResponseEntity<?> getTasksByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "0") int page,
@@ -298,7 +261,6 @@ public class TaskController {
                     .body("Error retrieving tasks: " + e.getMessage());
         }
     }
-
 
     // Update task status
     @PutMapping("/{taskId}/status")
