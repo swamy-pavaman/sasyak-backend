@@ -39,9 +39,6 @@ public class TaskRepo {
                 .description(rs.getString("description"))
                 .implementationJson(rs.getString("implementation"))
                 .status(rs.getString("status"))
-                .advice(rs.getString("advice")) // Get advice as plain text
-                .adviceCreatedAt(rs.getTimestamp("advice_created_at") != null ?
-                        rs.getTimestamp("advice_created_at").toLocalDateTime() : null) // Get advice creation date
                 .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                 .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
                 .build();
@@ -52,23 +49,6 @@ public class TaskRepo {
         String sql = "SELECT COUNT(*) FROM tasks WHERE tenant_id = ?";
         return jdbcTemplate.queryForObject(sql, Integer.class, tenantId);
     }
-
-
-//    // Get task status breakdown
-//    public Map<String, Integer> getTaskStatusBreakdown(UUID tenantId) {
-//        String sql = "SELECT status, COUNT(*) as count FROM tasks WHERE tenant_id = ? GROUP BY status";
-//        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
-//
-//        Map<String, Integer> statusBreakdown = new java.util.HashMap<>();
-//        for (Map<String, Object> row : rows) {
-//            String status = (String) row.get("status");
-//            Integer count = ((Number) row.get("count")).intValue();
-//            statusBreakdown.put(status, count);
-//        }
-//
-//        return statusBreakdown;
-//    }
-
 
     public Map<String, Integer> getTaskStatusBreakdown(UUID tenantId) {
         String sql = "SELECT status, COUNT(*) as count FROM tasks WHERE tenant_id = ? GROUP BY status";
@@ -92,8 +72,6 @@ public class TaskRepo {
         return statusBreakdown;
     }
 
-
-
     // Count recent tasks
     public int countRecentByTenantId(UUID tenantId, int days) {
         String sql = "SELECT COUNT(*) FROM tasks WHERE tenant_id = ? AND created_at >= CURRENT_TIMESTAMP - INTERVAL '" + days + " days'";
@@ -103,8 +81,8 @@ public class TaskRepo {
     // Save new task
     public int save(Task task) {
         String sql = "INSERT INTO tasks " +
-                "(tenant_id, created_by_id, assigned_to_id, task_type, details_json, images, description, implementation, status, advice) " +
-                "VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?)";
+                "(tenant_id, created_by_id, assigned_to_id, task_type, details_json, images, description, implementation, status) " +
+                "VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -125,7 +103,6 @@ public class TaskRepo {
             ps.setString(7, task.getDescription());
             ps.setString(8, task.getImplementationJson() != null ? task.getImplementationJson() : "{}");
             ps.setString(9, task.getStatus() != null ? task.getStatus() : "submitted");
-            ps.setString(10, task.getAdvice() != null ? task.getAdvice() : ""); // Plain text advice
 
             return ps;
         }, keyHolder);
@@ -214,7 +191,7 @@ public class TaskRepo {
         String sql = "SELECT task_type, COUNT(*) as count FROM tasks WHERE tenant_id = ? GROUP BY task_type";
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
 
-        Map<String, Integer> typeCounts = new java.util.HashMap<>();
+        Map<String, Integer> typeCounts = new HashMap<>();
         for (Map<String, Object> row : rows) {
             String type = (String) row.get("task_type");
             Integer count = ((Number) row.get("count")).intValue();
@@ -231,7 +208,7 @@ public class TaskRepo {
                 "WHERE t.tenant_id = ? GROUP BY u.name";
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
 
-        Map<String, Integer> userCounts = new java.util.HashMap<>();
+        Map<String, Integer> userCounts = new HashMap<>();
         for (Map<String, Object> row : rows) {
             String name = (String) row.get("name");
             Integer count = ((Number) row.get("count")).intValue();
@@ -247,7 +224,7 @@ public class TaskRepo {
                 "FROM tasks WHERE tenant_id = ? AND status = 'implemented' GROUP BY task_type";
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
 
-        Map<String, Double> avgTimes = new java.util.HashMap<>();
+        Map<String, Double> avgTimes = new HashMap<>();
         for (Map<String, Object> row : rows) {
             String type = (String) row.get("task_type");
             Double avgDays = ((Number) row.get("avg_days")).doubleValue();
@@ -293,7 +270,7 @@ public class TaskRepo {
                 "WHERE t.tenant_id = ? AND t.status = 'implemented' GROUP BY u.name";
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tenantId);
 
-        Map<String, Double> avgTimes = new java.util.HashMap<>();
+        Map<String, Double> avgTimes = new HashMap<>();
         for (Map<String, Object> row : rows) {
             String name = (String) row.get("name");
             Double avgDays = ((Number) row.get("avg_days")).doubleValue();

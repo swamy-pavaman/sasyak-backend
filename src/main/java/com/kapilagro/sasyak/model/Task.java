@@ -24,10 +24,8 @@ public class Task {
     private String description;
     private String implementationJson; // JSONB in database
     private String status; // "submitted", "approved", "rejected", "implemented"
-    private String advice;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime adviceCreatedAt;
 
     // Helper methods for status
     public boolean isSubmitted() {
