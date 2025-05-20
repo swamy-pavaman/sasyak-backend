@@ -28,17 +28,23 @@ public class TaskRepo {
 
     // Row mapper for Task
     private final RowMapper<Task> taskRowMapper = (rs, rowNum) -> {
+        Object statusObj = rs.getObject("status");
+        String status = (statusObj instanceof PGobject) ? ((PGobject) statusObj).getValue() : rs.getString("status");
+
+        Object taskTypeObj = rs.getObject("task_type");
+        String taskType = (taskTypeObj instanceof PGobject) ? ((PGobject) taskTypeObj).getValue() : rs.getString("task_type");
+
         return Task.builder()
                 .taskId(rs.getInt("task_id"))
                 .tenantId(UUID.fromString(rs.getString("tenant_id")))
                 .createdById(rs.getInt("created_by_id"))
-                .assignedToId(rs.getObject("assigned_to_id", Integer.class)) // Can be null
-                .taskType(rs.getString("task_type"))
+                .assignedToId(rs.getObject("assigned_to_id", Integer.class))
+                .taskType(taskType)
                 .detailsJson(rs.getString("details_json"))
                 .imagesJson(rs.getString("images"))
                 .description(rs.getString("description"))
                 .implementationJson(rs.getString("implementation"))
-                .status(rs.getString("status"))
+                .status(status)
                 .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                 .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
                 .build();
@@ -221,11 +227,11 @@ public class TaskRepo {
 
         Map<String, Integer> typeCounts = new HashMap<>();
         for (Map<String, Object> row : rows) {
-            String type = (String) row.get("task_type");
+            Object typeObj = row.get("task_type");
+            String type = (typeObj instanceof PGobject) ? ((PGobject) typeObj).getValue() : String.valueOf(typeObj);
             Integer count = ((Number) row.get("count")).intValue();
             typeCounts.put(type, count);
         }
-
         return typeCounts;
     }
 
@@ -245,7 +251,6 @@ public class TaskRepo {
 
         return userCounts;
     }
-
     // Get average task completion time by type
     public Map<String, Double> getAvgCompletionTimeByType(UUID tenantId) {
         String sql = "SELECT task_type, AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/86400) as avg_days " +
@@ -254,20 +259,14 @@ public class TaskRepo {
 
         Map<String, Double> avgTimes = new HashMap<>();
         for (Map<String, Object> row : rows) {
-            String type = (String) row.get("task_type");
+            Object typeObj = row.get("task_type");
+            String type = (typeObj instanceof PGobject) ? ((PGobject) typeObj).getValue() : String.valueOf(typeObj);
             Double avgDays = ((Number) row.get("avg_days")).doubleValue();
-            avgTimes.put(type, avgDays);
+            avgTimes.put(type, Math.round(avgDays * 1000.0) / 1000.0); // Round to 3 decimal places
         }
-
         return avgTimes;
     }
 
-    // Get tasks by task type
-//    public List<Task> getByTaskType(UUID tenantId, String taskType, int page, int size) {
-//        String sql = "SELECT * FROM tasks WHERE tenant_id = ? AND UPPER(task_type) = UPPER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
-//        int offset = page * size;
-//        return jdbcTemplate.query(sql, taskRowMapper, tenantId, taskType, size, offset);
-//    }
     public List<Task> getByTaskType(UUID tenantId, String taskType, int createdById, int page, int size) {
         String sql = "SELECT * FROM tasks " +
                 "WHERE tenant_id = ? " +
