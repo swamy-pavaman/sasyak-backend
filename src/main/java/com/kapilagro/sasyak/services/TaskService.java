@@ -188,8 +188,8 @@ public class TaskService {
         return taskRepository.getByAssignedTo(tenantId, userId, page, size);
     }
 
-    public List<Task> getTasksByStatus(UUID tenantId, String status, int page, int size) {
-        return taskRepository.getByStatus(tenantId, status, page, size);
+    public List<Task> getTasksByStatus(UUID tenantId, String status, int createdById, int page, int size) {
+        return taskRepository.getByStatus(tenantId, status, createdById, page, size);
     }
 
     public List<Task> getAllTasks(UUID tenantId, int page, int size) {
@@ -379,9 +379,13 @@ public class TaskService {
         return report;
     }
 
-    public List<Task> getTasksByType(UUID tenantId, String taskType, int page, int size) {
-        return taskRepository.getByTaskType(tenantId, taskType, page, size);
-    }
+//    public List<Task> getTasksByType(UUID tenantId, String taskType, int page, int size) {
+//        return taskRepository.getByTaskType(tenantId, taskType, page, size);
+//    }
+public List<Task> getTasksByType(UUID tenantId, String taskType, int createdById, int page, int size) {
+    return taskRepository.getByTaskType(tenantId, taskType, createdById, page, size);
+}
+
 
     public int countTasksByType(UUID tenantId, String taskType) {
         return taskRepository.countByTaskType(tenantId, taskType);
@@ -438,5 +442,9 @@ public class TaskService {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
         return report;
+    }
+
+    public List<Task> getTasksByManager(UUID tenantId, int managerId, int page, int size) {
+        return taskRepository.getTasksByManager(tenantId, managerId, page, size);
     }
 }

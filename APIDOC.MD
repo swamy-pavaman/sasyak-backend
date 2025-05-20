@@ -727,6 +727,21 @@ The current API version is v1, which is implicit in the base URL. Future version
   }
   ```
 
+### Get supervisor List
+- **URL**: `/api/manager/users/supervisor-list`
+- **Method**: `GET`
+- **Description**: Get a streamlined list of supervisor with only ID and name
+- **Access**: Requires manager role
+- **Response**:
+  - Status Code: 200 OK
+  ```json
+  [
+    {
+      "supervisorId": "integer",
+      "supervisorName": "string"
+    }
+  ]
+
 ### Get Supervisors
 - **URL**: `/api/manager/users/supervisors`
 - **Method**: `GET`

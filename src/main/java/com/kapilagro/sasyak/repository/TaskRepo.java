@@ -147,12 +147,40 @@ public class TaskRepo {
     }
 
     // Get tasks by status
-    public List<Task> getByStatus(UUID tenantId, String status, int page, int size) {
-        String sql = "SELECT * FROM tasks WHERE tenant_id = ? AND UPPER(status) = UPPER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
+    public List<Task> getByStatus(UUID tenantId, String status, int createdById, int page, int size) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT t.* FROM tasks t " +
+                        "INNER JOIN users u ON t.created_by_id = u.user_id " + // fixed here
+                        "WHERE t.tenant_id = ? AND UPPER(t.status) = UPPER(?) AND t.created_by_id = ?"
+        );
+
+        List<Object> params = new ArrayList<>();
+        params.add(tenantId);
+        params.add(status);
+        params.add(createdById);
+
+        sql.append(" ORDER BY t.created_at DESC LIMIT ? OFFSET ?");
         int offset = page * size;
-        return jdbcTemplate.query(sql, taskRowMapper, tenantId, status, size, offset);
+        params.add(size);
+        params.add(offset);
+
+        return jdbcTemplate.query(sql.toString(), taskRowMapper, params.toArray());
     }
 
+
+    public long countByStatus(UUID tenantId, String status, UUID createdById) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) FROM tasks t " +
+                        "INNER JOIN users u ON t.created_by_id = u.id " +
+                        "WHERE t.tenant_id = ? AND UPPER(t.status) = UPPER(?) AND t.created_by_id = ?");
+
+        List<Object> params = new ArrayList<>();
+        params.add(tenantId);
+        params.add(status);
+        params.add(createdById);
+
+        return jdbcTemplate.queryForObject(sql.toString(), Long.class, params.toArray());
+    }
     // Update task status
     public boolean updateStatus(int taskId, String status) {
         String sql = "UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE task_id = ?";
@@ -235,11 +263,21 @@ public class TaskRepo {
     }
 
     // Get tasks by task type
-    public List<Task> getByTaskType(UUID tenantId, String taskType, int page, int size) {
-        String sql = "SELECT * FROM tasks WHERE tenant_id = ? AND UPPER(task_type) = UPPER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
+//    public List<Task> getByTaskType(UUID tenantId, String taskType, int page, int size) {
+//        String sql = "SELECT * FROM tasks WHERE tenant_id = ? AND UPPER(task_type) = UPPER(?) ORDER BY created_at DESC LIMIT ? OFFSET ?";
+//        int offset = page * size;
+//        return jdbcTemplate.query(sql, taskRowMapper, tenantId, taskType, size, offset);
+//    }
+    public List<Task> getByTaskType(UUID tenantId, String taskType, int createdById, int page, int size) {
+        String sql = "SELECT * FROM tasks " +
+                "WHERE tenant_id = ? " +
+                "AND UPPER(task_type) = UPPER(?) " +
+                "AND created_by_id = ? " +
+                "ORDER BY created_at DESC LIMIT ? OFFSET ?";
         int offset = page * size;
-        return jdbcTemplate.query(sql, taskRowMapper, tenantId, taskType, size, offset);
+        return jdbcTemplate.query(sql, taskRowMapper, tenantId, taskType, createdById, size, offset);
     }
+
 
     // Count tasks by task type (for pagination total)
     public int countByTaskType(UUID tenantId, String taskType) {
@@ -300,4 +338,14 @@ public class TaskRepo {
                         }
                 ));
     }
+
+    public List<Task> getTasksByManager(UUID tenantId, int managerId, int page, int size) {
+        String sql = "SELECT t.* FROM tasks t " +
+                "JOIN users u ON t.created_by_id = u.user_id " +
+                "WHERE t.tenant_id = ? AND u.manager_id = ? " +
+                "ORDER BY t.created_at DESC LIMIT ? OFFSET ?";
+        int offset = page * size;
+        return jdbcTemplate.query(sql, taskRowMapper, tenantId, managerId, size, offset);
+    }
+
 }
