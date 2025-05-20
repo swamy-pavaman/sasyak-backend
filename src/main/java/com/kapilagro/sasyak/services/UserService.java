@@ -180,4 +180,14 @@ public class UserService {
     public List<User> getUsersByManagerId(int managerId) {
         return userRepo.getUsersByManagerId(managerId);
     }
+
+    public List<GetSupervisorsListResponse> getsupervisorsUnderManager(int currentUserId) {
+        List<Map<String, Object>> supervisorsData = userRepo.getSupervisorsListByManager(currentUserId);
+        return supervisorsData.stream()
+                .map(data -> new GetSupervisorsListResponse(
+                        ((Number) data.get("user_id")).intValue(),
+                        (String) data.get("name")
+                ))
+                .collect(Collectors.toList());
+    }
 }

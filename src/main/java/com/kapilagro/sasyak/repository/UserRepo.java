@@ -299,4 +299,9 @@ public boolean update(User user) {
         String query = "SELECT * FROM users WHERE manager_id = ?";
         return template.query(query, userRowMapper, managerId);
     }
+
+    public List<Map<String, Object>> getSupervisorsListByManager(int currentUserId) {
+        String query = "SELECT user_id, name FROM users WHERE manager_id = ? AND UPPER(role) = 'SUPERVISOR'";
+        return template.queryForList(query, currentUserId);
+    }
 }
