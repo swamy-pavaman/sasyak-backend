@@ -174,4 +174,10 @@ public class AdminService {
     public int getManagerCount(UUID tenantId) {
         return userService.countManagersByTenant(tenantId);
     }
+
+    public boolean userExitsById(Integer managerId) {
+        return userService.existsById(managerId);
+    }
+
+
 }

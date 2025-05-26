@@ -161,13 +161,35 @@ public class UserAdminController {
             UUID tenantId = getCurrentUserTenantId();
             log.debug("Retrieved tenantId: {}", tenantId);
 
+            // Validate managerId based on role
+            Integer managerId = request.getManagerId();
+            String role = request.getRole() != null ? request.getRole().toUpperCase() : "EMPLOYEE";
+
+            // Only SUPERVISOR can have a managerId
+            if (!"SUPERVISOR".equals(role)) {
+                managerId = null; // Force managerId to null for non-SUPERVISOR roles
+            } else if (managerId != null && managerId != 0) {
+                // Validate that managerId exists in the users table
+                boolean managerExists = adminService.userExitsById(managerId);
+                if (!managerExists) {
+                    log.error("Invalid managerId: {} for email: {}", managerId, request.getEmail());
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Invalid managerId: Manager does not exist.");
+                }
+            } else if (managerId == 0) {
+                // Explicitly handle managerId = 0
+                log.error("Invalid managerId: 0 provided for email: {}", request.getEmail());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Invalid managerId: 0 is not a valid manager ID.");
+            }
+
             User employee = User.builder()
                     .name(request.getName())
                     .email(request.getEmail().toLowerCase())
                     .password(generatePasswordUtility.generateRandomPassword())
                     .phoneNumber(request.getPhone_number())
-                    .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
-                    .managerId(request.getManagerId())
+                    .role(role)
+                    .managerId(managerId)
                     .build();
             log.debug("Created User object: name={}, email={}, role={}, managerId={}",
                     employee.getName(), employee.getEmail(), employee.getRole(), employee.getManagerId());
@@ -204,8 +226,6 @@ public class UserAdminController {
             log.debug("Exiting createUser");
         }
     }
-
-
 
 
     // Update an existing user (admin can only update users in their tenant)

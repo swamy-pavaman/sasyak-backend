@@ -125,7 +125,8 @@ public class UserRepo {
             }
             ps.setString(6, user.getPhoneNumber());
 
-            if (user.getManagerId() != null) {
+            // Additional validation to prevent managerId = 0
+            if (user.getManagerId() != null && user.getManagerId() != 0) {
                 ps.setInt(7, user.getManagerId());
             } else {
                 ps.setNull(7, java.sql.Types.INTEGER);
@@ -303,5 +304,10 @@ public boolean update(User user) {
     public List<Map<String, Object>> getSupervisorsListByManager(int currentUserId) {
         String query = "SELECT user_id, name FROM users WHERE manager_id = ? AND UPPER(role) = 'SUPERVISOR'";
         return template.queryForList(query, currentUserId);
+    }
+
+    public boolean existsById(Integer userId) {
+        String query = "SELECT EXISTS (SELECT 1 FROM users WHERE user_id = ?)";
+        return template.queryForObject(query, Boolean.class, userId);
     }
 }
