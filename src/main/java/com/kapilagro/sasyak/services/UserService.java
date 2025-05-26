@@ -4,6 +4,8 @@ import com.kapilagro.sasyak.model.GetManagerListResponse;
 import com.kapilagro.sasyak.model.GetSupervisorsListResponse;
 import com.kapilagro.sasyak.model.User;
 import com.kapilagro.sasyak.repository.UserRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,19 +36,24 @@ public class UserService {
     }
 
     // This method registers a user and returns the user with ID
+    @Transactional
     public User registerUser(User user) {
-        // Set default role if not provided
-        if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole("USER");
+        Logger log = LoggerFactory.getLogger(getClass());
+        log.debug("Entering registerUser with email: {}", user.getEmail());
+        try {
+            log.debug("Encoding password for email: {}", user.getEmail());
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            log.debug("Saving user to database: email={}", user.getEmail());
+            int userId = userRepo.save(user);
+            log.debug("User saved successfully: userId={}, email={}", userId, user.getEmail());
+            user.setUserId(userId);
+            return user;
+        } catch (Exception e) {
+            log.error("Error in registerUser: email={}, message={}", user.getEmail(), e.getMessage(), e);
+            throw e;
+        } finally {
+            log.debug("Exiting registerUser");
         }
-
-        // Encode password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Save to database
-        int userId = userRepo.save(user);
-        user.setUserId(userId);
-        return user;
     }
 
     // This method is similar to registerUser but doesn't encode the password

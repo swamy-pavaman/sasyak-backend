@@ -6,6 +6,8 @@ import com.kapilagro.sasyak.services.EmailService;
 import com.kapilagro.sasyak.services.UserService;
 import com.kapilagro.sasyak.utils.GeneratePasswordUtility;
 import com.kapilagro.sasyak.utils.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -153,41 +155,55 @@ public class UserAdminController {
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody CreateEmployeeRequest request) {
+        Logger log = LoggerFactory.getLogger(getClass());
+        log.debug("Entering createUser with request: {}", request);
         try {
             UUID tenantId = getCurrentUserTenantId();
+            log.debug("Retrieved tenantId: {}", tenantId);
 
             User employee = User.builder()
                     .name(request.getName())
-                    .email(request.getEmail())
+                    .email(request.getEmail().toLowerCase())
                     .password(generatePasswordUtility.generateRandomPassword())
                     .phoneNumber(request.getPhone_number())
                     .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
                     .managerId(request.getManagerId())
                     .build();
+            log.debug("Created User object: name={}, email={}, role={}, managerId={}",
+                    employee.getName(), employee.getEmail(), employee.getRole(), employee.getManagerId());
+            log.debug("Generated password: {}", employee.getPassword());
 
-            System.out.println("user name :"+employee.getEmail()+"employee password :"+employee.getPassword());
-            String password =employee.getPassword();
+            String password = employee.getPassword();
+            log.debug("Calling adminService.createEmployee with email: {}, tenantId: {}", employee.getEmail(), tenantId);
             User createdEmployee = adminService.createEmployee(employee, tenantId);
-            emailService.sendMail(employee.getEmail(), request.getCompanyName(), password+"  this is added");
-//            System.out.println(employee.getPassword());
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    GetEmployeesResponse.EmployeeDTO.builder()
-                            .id(createdEmployee.getUserId())
-                            .name(createdEmployee.getName())
-                            .email(createdEmployee.getEmail())
-                            .role(createdEmployee.getRole())
-                            .build()
-            );
+            log.debug("Employee created successfully: userId={}, email={}", createdEmployee.getUserId(), createdEmployee.getEmail());
 
+            log.debug("Sending email to: {}, company: {}", employee.getEmail(), request.getCompanyName());
+            emailService.sendMail(employee.getEmail(), request.getCompanyName(), password);
+            log.debug("Email sent successfully to: {}", employee.getEmail());
+
+            GetEmployeesResponse.EmployeeDTO response = GetEmployeesResponse.EmployeeDTO.builder()
+                    .id(createdEmployee.getUserId())
+                    .name(createdEmployee.getName())
+                    .email(createdEmployee.getEmail())
+                    .role(createdEmployee.getRole())
+                    .build();
+            log.debug("Returning response: {}", response);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException ex) {
+            log.error("Conflict in createUser: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("User already exists with this email.");
+            log.error("Data integrity violation in createUser: email={}, message={}", request.getEmail(), ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists with this email.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error creating employee: " + e.getMessage());
+            log.error("Unexpected error in createUser: email={}, message={}", request.getEmail(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating employee: " + e.getMessage());
+        } finally {
+            log.debug("Exiting createUser");
         }
     }
-
 
 
 
