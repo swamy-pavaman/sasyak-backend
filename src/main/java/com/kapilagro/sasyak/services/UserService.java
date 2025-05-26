@@ -197,4 +197,8 @@ public class UserService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public boolean existsById(Integer managerId) {
+        return userRepo.existsById(managerId);
+    }
 }
