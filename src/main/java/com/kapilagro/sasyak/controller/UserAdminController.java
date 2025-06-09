@@ -200,10 +200,10 @@ public class UserAdminController {
             User createdEmployee = adminService.createEmployee(employee, tenantId);
             log.debug("Employee created successfully: userId={}, email={}", createdEmployee.getUserId(), createdEmployee.getEmail());
 
-            log.debug("Sending email to: {}, company: {}", employee.getEmail(), request.getCompanyName());
-            emailService.sendMail(employee.getEmail(), request.getCompanyName(), password);
+            String company = userService.getCompanyName(tenantId);
+            log.debug("Sending email to: {}, company: {}", employee.getEmail(), company);
+            emailService.sendMail(employee.getEmail(), company, password);
             log.debug("Email sent successfully to: {}", employee.getEmail());
-
             GetEmployeesResponse.EmployeeDTO response = GetEmployeesResponse.EmployeeDTO.builder()
                     .id(createdEmployee.getUserId())
                     .name(createdEmployee.getName())
@@ -211,7 +211,6 @@ public class UserAdminController {
                     .role(createdEmployee.getRole())
                     .build();
             log.debug("Returning response: {}", response);
-
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException ex) {
             log.error("Conflict in createUser: {}", ex.getMessage(), ex);
@@ -226,6 +225,8 @@ public class UserAdminController {
             log.debug("Exiting createUser");
         }
     }
+
+
 
 
     // Update an existing user (admin can only update users in their tenant)

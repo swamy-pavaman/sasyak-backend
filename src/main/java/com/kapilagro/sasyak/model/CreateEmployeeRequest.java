@@ -14,7 +14,7 @@ public class CreateEmployeeRequest {
     private String email;
     //private String password;
     private String phone_number;
-    private String companyName;
+//    private String companyName;
     private String role; // EMPLOYEE, MANAGER, SUPERVISOR
     private int managerId;
 }

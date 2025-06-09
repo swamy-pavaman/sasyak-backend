@@ -201,4 +201,8 @@ public class UserService {
     public boolean existsById(Integer managerId) {
         return userRepo.existsById(managerId);
     }
+
+    public String getCompanyName(UUID tenantId) {
+        return userRepo.getUserCompanyNameByTenantId(tenantId);
+    }
 }

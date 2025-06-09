@@ -310,4 +310,10 @@ public boolean update(User user) {
         String query = "SELECT EXISTS (SELECT 1 FROM users WHERE user_id = ?)";
         return template.queryForObject(query, Boolean.class, userId);
     }
+
+    public String getUserCompanyNameByTenantId(UUID tenantId) {
+        String query = "SELECT company_name FROM tenants WHERE tenant_id = ?";
+        return template.queryForObject(query, String.class, tenantId);
+    }
+
 }
