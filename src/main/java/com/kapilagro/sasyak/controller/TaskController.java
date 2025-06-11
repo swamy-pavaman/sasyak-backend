@@ -42,12 +42,10 @@ public class TaskController {
         try {
             User currentUser = getCurrentUser();
             UUID tenantId = currentUser.getTenantId();
+            int createdById = currentUser.getUserId();
 
-            // TODO change this to only send supervisors tasks only
-            List<Task> tasks = taskService.getTasksByType(tenantId, taskType, page, size);
-//            int total = taskService.countTasksByType(tenantId, taskType);
-            int total =tasks.size();
-
+            List<Task> tasks = taskService.getTasksByType(tenantId, taskType, createdById, page, size);
+            int total = tasks.size();
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -66,7 +64,6 @@ public class TaskController {
     }
 
 
-
     // Create a new task
     @PostMapping
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERVISOR', 'ADMIN')")
@@ -83,11 +80,9 @@ public class TaskController {
                     request.getDetailsJson(),
                     request.getImagesJson(),
                     request.getAssignedToId()
-
             );
 
             TaskDTO taskDTO = taskService.convertToDTO(createdTask);
-
 
             return ResponseEntity.status(HttpStatus.CREATED).body(taskDTO);
         } catch (IllegalArgumentException e) {
@@ -137,6 +132,38 @@ public class TaskController {
         }
     }
 
+    // Get tasks created by or assigned under a manager
+    @GetMapping("/by-supervisors")
+    @PreAuthorize("hasAnyRole('MANAGER')")
+    public ResponseEntity<?> getTasksByManager(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            User currentUser = getCurrentUser();
+            UUID tenantId = currentUser.getTenantId();
+            int managerId = currentUser.getUserId();
+
+            // You may define this in your TaskService if not already present
+            List<Task> tasks = taskService.getTasksByManager(tenantId, managerId, page, size);
+            int total = tasks.size();
+
+            List<TaskDTO> taskDTOs = tasks.stream()
+                    .map(taskService::convertToDTO)
+                    .collect(Collectors.toList());
+
+            TaskListResponse response = TaskListResponse.builder()
+                    .tasks(taskDTOs)
+                    .totalCount(total)
+                    .build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving manager tasks: " + e.getMessage());
+        }
+    }
+
+
     // Get tasks created by the current user
     @GetMapping("/created")
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERVISOR', 'ADMIN')")
@@ -148,8 +175,7 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getTasksCreatedByUser(tenantId, currentUser.getUserId(), page, size);
-//            int total = taskService.countTasksByTenant(tenantId);
-            int total =tasks.size();
+            int total = taskService.countByCreatedBy(tenantId, currentUser.getUserId());
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -178,8 +204,7 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getTasksAssignedToUser(tenantId, currentUser.getUserId(), page, size);
-//            int total = taskService.countTasksByTenant(tenantId);
-            int total =tasks.size();
+            int total = taskService.countByAssignedTo(tenantId, currentUser.getUserId());
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -208,7 +233,7 @@ public class TaskController {
             UUID tenantId = currentUser.getTenantId();
 
             List<Task> tasks = taskService.getAllTasks(tenantId, page, size);
-            int total =tasks.size();
+            int total = taskService.countTasksByTenant(tenantId);
 
             List<TaskDTO> taskDTOs = tasks.stream()
                     .map(taskService::convertToDTO)
@@ -228,16 +253,32 @@ public class TaskController {
 
     // Get tasks by status
 //    @GetMapping("/status/{status}")
-//    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN','SUPERVISOR)")
+//    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'SUPERVISOR')")
 //    public ResponseEntity<?> getTasksByStatus(
 //            @PathVariable String status,
 //            @RequestParam(defaultValue = "0") int page,
 //            @RequestParam(defaultValue = "10") int size) {
 //        try {
+//            log.debug("Fetching tasks with status: {}, page: {}, size: {}", status, page, size);
+//
 //            User currentUser = getCurrentUser();
+//            if (currentUser == null) {
+//                log.error("getCurrentUser() returned null");
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                        .body("User not authenticated.");
+//            }
+//
 //            UUID tenantId = currentUser.getTenantId();
+//            log.debug("Current User: {}, Tenant ID: {}", currentUser.getName(), tenantId);
+//
+//            if (tenantId == null) {
+//                log.error("Tenant ID is null for user: {}", currentUser.getName());
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body("Tenant information is missing.");
+//            }
 //
 //            List<Task> tasks = taskService.getTasksByStatus(tenantId, status, page, size);
+//            log.debug("Fetched {} tasks for tenant {}", tasks.size(), tenantId);
 //
 //            List<TaskDTO> taskDTOs = tasks.stream()
 //                    .map(taskService::convertToDTO)
@@ -250,13 +291,14 @@ public class TaskController {
 //
 //            return ResponseEntity.ok(response);
 //        } catch (Exception e) {
+//            log.error("Exception occurred while retrieving tasks", e);
 //            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 //                    .body("Error retrieving tasks: " + e.getMessage());
 //        }
 //    }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'SUPERVISOR')") // ✅ Fixed syntax
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'SUPERVISOR')")
     public ResponseEntity<?> getTasksByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "0") int page,
@@ -280,7 +322,7 @@ public class TaskController {
                         .body("Tenant information is missing.");
             }
 
-            List<Task> tasks = taskService.getTasksByStatus(tenantId, status, page, size);
+            List<Task> tasks = taskService.getTasksByStatus(tenantId, status, currentUser.getUserId(), page, size);
             log.debug("Fetched {} tasks for tenant {}", tasks.size(), tenantId);
 
             List<TaskDTO> taskDTOs = tasks.stream()
@@ -289,7 +331,7 @@ public class TaskController {
 
             TaskListResponse response = TaskListResponse.builder()
                     .tasks(taskDTOs)
-                    .totalCount(taskDTOs.size()) // Simple count of returned tasks
+                    .totalCount(tasks.size())
                     .build();
 
             return ResponseEntity.ok(response);
@@ -299,7 +341,6 @@ public class TaskController {
                     .body("Error retrieving tasks: " + e.getMessage());
         }
     }
-
 
     // Update task status
     @PutMapping("/{taskId}/status")

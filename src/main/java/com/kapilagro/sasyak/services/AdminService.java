@@ -2,6 +2,8 @@ package com.kapilagro.sasyak.services;
 
 import com.kapilagro.sasyak.model.DashBoardResponse;
 import com.kapilagro.sasyak.model.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -27,8 +29,21 @@ public class AdminService {
     AdviceService adviceService;
 
     // Create a new employee
+    @Transactional
     public User createEmployee(User employee, UUID tenantId) {
-        return userService.createEmployee(employee, tenantId);
+        Logger log = LoggerFactory.getLogger(getClass());
+        log.debug("Entering createEmployee with email: {}, tenantId: {}", employee.getEmail(), tenantId);
+        try {
+            log.debug("Calling userService.createEmployee with email: {}, tenantId: {}", employee.getEmail(), tenantId);
+            User createdUser = userService.createEmployee(employee, tenantId);
+            log.debug("Employee created successfully: userId={}, email={}", createdUser.getUserId(), createdUser.getEmail());
+            return createdUser;
+        } catch (Exception e) {
+            log.error("Error in createEmployee: email={}, tenantId={}, message={}", employee.getEmail(), tenantId, e.getMessage(), e);
+            throw e;
+        } finally {
+            log.debug("Exiting createEmployee");
+        }
     }
 
     // Get all employees for a tenant
@@ -159,4 +174,11 @@ public class AdminService {
     public int getManagerCount(UUID tenantId) {
         return userService.countManagersByTenant(tenantId);
     }
+
+    public boolean userExitsById(Integer managerId) {
+        return userService.existsById(managerId);
+    }
+
+
+
 }

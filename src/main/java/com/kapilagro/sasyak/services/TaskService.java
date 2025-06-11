@@ -1,4 +1,3 @@
-// File: TaskService.java (Extended version)
 package com.kapilagro.sasyak.services;
 
 import com.kapilagro.sasyak.model.Task;
@@ -28,9 +27,19 @@ public class TaskService {
         this.notificationService = notificationService;
     }
 
-    // Existing methods
+    // Count tasks by tenant
     public int countTasksByTenant(UUID tenantId) {
         return taskRepository.countByTenantId(tenantId);
+    }
+
+    // Count tasks created by a user
+    public int countByCreatedBy(UUID tenantId, int userId) {
+        return taskRepository.countByCreatedBy(tenantId, userId);
+    }
+
+    // Count tasks assigned to a user
+    public int countByAssignedTo(UUID tenantId, int userId) {
+        return taskRepository.countByAssignedTo(tenantId, userId);
     }
 
     public Map<String, Integer> getTaskStatusBreakdown(UUID tenantId) {
@@ -40,124 +49,6 @@ public class TaskService {
     public int countRecentTasksByTenant(UUID tenantId, int days) {
         return taskRepository.countRecentByTenantId(tenantId, days);
     }
-
-    // New methods for task management
-
-    // Create a new task
-    // In TaskService.java's createTask method, add this after creating the task
-//    @Transactional
-//    public Task createTask(UUID tenantId, int createdById, String taskType, String description,
-//                           String detailsJson, String imagesJson, Integer assignedToId) {
-//
-//        System.out.println("==== CREATE TASK START ====");
-//        System.out.println("TenantId: " + tenantId);
-//        System.out.println("CreatedById: " + createdById);
-//        System.out.println("TaskType: " + taskType);
-//        System.out.println("Description: " + description);
-//
-//        // Create the task
-//        Task task = Task.builder()
-//                .tenantId(tenantId)
-//                .createdById(createdById)
-//                .assignedToId(assignedToId)
-//                .taskType(taskType)
-//                .description(description)
-//                .detailsJson(detailsJson)
-//                .imagesJson(imagesJson)
-//                .status("submitted")
-//                .build();
-//
-//        try {
-//            int taskId = taskRepository.save(task);
-//            task.setTaskId(taskId);
-//            System.out.println("Task saved with ID: " + taskId);
-//
-//            // Get creator info for notifications
-//            System.out.println("Fetching creator info for user ID: " + createdById);
-//            Optional<User> creator = userRepository.getUserById(createdById);
-//            System.out.println("Creator present: " + creator.isPresent());
-//
-//            if (creator.isPresent()) {
-//                User creatorUser = creator.get();
-//                System.out.println("Creator Name: " + creatorUser.getName());
-//                System.out.println("Creator Role: " + creatorUser.getRole());
-//                System.out.println("Creator Role in lowercase: " + creatorUser.getRole().toLowerCase());
-//                System.out.println("Is Supervisor check: " + "supervisor".equals(creatorUser.getRole().toLowerCase()));
-//            }
-//
-//            String creatorName = creator.map(User::getName).orElse("A user");
-//
-//            // Check if task creator is a supervisor
-//            boolean isSupervisor = creator.isPresent() &&
-//                    "supervisor".equals(creator.get().getRole().toLowerCase());
-//
-//            System.out.println("Is Supervisor: " + isSupervisor);
-//
-//            if (isSupervisor) {
-//                System.out.println("User is a supervisor, creating notifications");
-//
-//                try {
-//                    // Notify all managers in the tenant
-//                    System.out.println("Calling notifySupervisorTaskCreation");
-//                    notificationService.notifySupervisorTaskCreation(
-//                            tenantId,
-//                            taskId,
-//                            taskType,
-//                            description,
-//                            createdById,
-//                            creatorName
-//                    );
-//                } catch (Exception e) {
-//                    System.out.println("Error in notifySupervisorTaskCreation: " + e.getMessage());
-//                    e.printStackTrace();
-//                }
-//
-//                try {
-//                    // Notify the supervisor's direct manager
-//                    System.out.println("Calling notifySupervisorManagerOfTaskCreation");
-//                    notificationService.notifySupervisorManagerOfTaskCreation(
-//                            tenantId,
-//                            taskId,
-//                            taskType,
-//                            description,
-//                            createdById,
-//                            creatorName
-//                    );
-//                } catch (Exception e) {
-//                    System.out.println("Error in notifySupervisorManagerOfTaskCreation: " + e.getMessage());
-//                    e.printStackTrace();
-//                }
-//            } else {
-//                System.out.println("User is NOT a supervisor, skipping supervisor notifications");
-//            }
-//
-//            // If task is assigned to someone, notify them
-//            if (assignedToId != null) {
-//                System.out.println("Task assigned to user ID: " + assignedToId + ", creating assignment notification");
-//                try {
-//                    notificationService.createTaskAssignmentNotification(
-//                            tenantId,
-//                            assignedToId,
-//                            taskId,
-//                            "New Task Assigned",
-//                            creatorName + " has assigned you a new task."
-//                    );
-//                } catch (Exception e) {
-//                    System.out.println("Error in createTaskAssignmentNotification: " + e.getMessage());
-//                    e.printStackTrace();
-//                }
-//            }
-//
-//        } catch (Exception e) {
-//            System.out.println("Error in task creation: " + e.getMessage());
-//            e.printStackTrace();
-//            throw e; // Re-throw to maintain transaction behavior
-//        }
-//
-//        System.out.println("==== CREATE TASK END ====");
-//        return task;
-//    }
-
 
     @Transactional
     public Task createTask(UUID tenantId, int createdById, String taskType, String description,
@@ -198,8 +89,8 @@ public class TaskService {
             System.out.println("Creator Role: " + creatorRole);
 
             // Check if task creator is a supervisor or manager
-            boolean isSupervisor = "supervisor".equals(creator.get().getRole().toLowerCase());
-            boolean isManager = "MANAGER".equals(creatorRole);
+            boolean isSupervisor = creator.isPresent() && "supervisor".equalsIgnoreCase(creator.get().getRole());
+            boolean isManager = creator.isPresent() && "MANAGER".equalsIgnoreCase(creator.get().getRole());
 
             System.out.println("Is Supervisor: " + isSupervisor);
             System.out.println("Is Manager: " + isManager);
@@ -249,13 +140,10 @@ public class TaskService {
         return task;
     }
 
-
-    // Get a specific task
     public Optional<Task> getTaskById(int taskId) {
         return taskRepository.getById(taskId);
     }
 
-    // Check if user has access to a task (created it, assigned to it, or is a manager)
     public boolean userHasAccessToTask(int userId, int taskId, UUID tenantId) {
         Optional<Task> taskOpt = taskRepository.getById(taskId);
         if (taskOpt.isEmpty() || !taskOpt.get().getTenantId().equals(tenantId)) {
@@ -292,27 +180,22 @@ public class TaskService {
         return user.filter(u -> "ADMIN".equalsIgnoreCase(u.getRole())).isPresent();
     }
 
-    // Get tasks created by a user
     public List<Task> getTasksCreatedByUser(UUID tenantId, int userId, int page, int size) {
         return taskRepository.getByCreatedBy(tenantId, userId, page, size);
     }
 
-    // Get tasks assigned to a user
     public List<Task> getTasksAssignedToUser(UUID tenantId, int userId, int page, int size) {
         return taskRepository.getByAssignedTo(tenantId, userId, page, size);
     }
 
-    // Get tasks by status
-    public List<Task> getTasksByStatus(UUID tenantId, String status, int page, int size) {
-        return taskRepository.getByStatus(tenantId, status, page, size);
+    public List<Task> getTasksByStatus(UUID tenantId, String status, int createdById, int page, int size) {
+        return taskRepository.getByStatus(tenantId, status, createdById, page, size);
     }
 
-    // Get all tasks for a tenant with pagination
     public List<Task> getAllTasks(UUID tenantId, int page, int size) {
         return taskRepository.getByTenantId(tenantId, page, size);
     }
 
-    // Update task status
     @Transactional
     public boolean updateTaskStatus(int taskId, String status, int userId) {
         Optional<Task> taskOpt = taskRepository.getById(taskId);
@@ -361,7 +244,6 @@ public class TaskService {
         return updated;
     }
 
-    // Update task implementation
     @Transactional
     public boolean updateTaskImplementation(int taskId, String implementationJson, int userId) {
         Optional<Task> taskOpt = taskRepository.getById(taskId);
@@ -410,7 +292,6 @@ public class TaskService {
         return updated;
     }
 
-    // Assign task to a user
     @Transactional
     public boolean assignTask(int taskId, int assignedToId, int assignerId) {
         Optional<Task> taskOpt = taskRepository.getById(taskId);
@@ -443,7 +324,6 @@ public class TaskService {
         return updated;
     }
 
-    // Convert Task to TaskDTO with usernames
     public TaskDTO convertToDTO(Task task) {
         // Get creator name
         String createdByName = userRepository.getUserById(task.getCreatedById())
@@ -473,7 +353,6 @@ public class TaskService {
                 .build();
     }
 
-    // Get task report for a tenant
     public Map<String, Object> getTaskReport(UUID tenantId) {
         Map<String, Object> report = new HashMap<>();
 
@@ -500,36 +379,34 @@ public class TaskService {
         return report;
     }
 
-    // Get tasks by task type
-    public List<Task> getTasksByType(UUID tenantId, String taskType, int page, int size) {
-        return taskRepository.getByTaskType(tenantId, taskType, page, size);
-    }
+//    public List<Task> getTasksByType(UUID tenantId, String taskType, int page, int size) {
+//        return taskRepository.getByTaskType(tenantId, taskType, page, size);
+//    }
+public List<Task> getTasksByType(UUID tenantId, String taskType, int createdById, int page, int size) {
+    return taskRepository.getByTaskType(tenantId, taskType, createdById, page, size);
+}
 
-    // Count tasks by task type
+
     public int countTasksByType(UUID tenantId, String taskType) {
         return taskRepository.countByTaskType(tenantId, taskType);
     }
 
-    // Get tasks completed per day for last n days
     public List<Map<String, Object>> getTasksCompletedPerDay(UUID tenantId, int days) {
         LocalDateTime endDate = LocalDateTime.now();
         LocalDateTime startDate = endDate.minusDays(days);
         return taskRepository.getTasksCompletedPerDay(tenantId, startDate, endDate);
     }
 
-    // Get tasks created per day for last n days
     public List<Map<String, Object>> getTasksCreatedPerDay(UUID tenantId, int days) {
         LocalDateTime endDate = LocalDateTime.now();
         LocalDateTime startDate = endDate.minusDays(days);
         return taskRepository.getTasksCreatedPerDay(tenantId, startDate, endDate);
     }
 
-    // Get task completion rate by user
     public Map<String, Object> getTaskCompletionRateByUser(UUID tenantId) {
         return taskRepository.getTaskCompletionRateByUser(tenantId);
     }
 
-    // Get detailed task report
     public Map<String, Object> getDetailedTaskReport(UUID tenantId, int days) {
         Map<String, Object> report = new HashMap<>();
 
@@ -547,7 +424,6 @@ public class TaskService {
         return report;
     }
 
-    // Get efficiency report (completion time vs expected)
     public Map<String, Object> getEfficiencyReport(UUID tenantId) {
         Map<String, Object> report = new HashMap<>();
 
@@ -566,5 +442,9 @@ public class TaskService {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
         return report;
+    }
+
+    public List<Task> getTasksByManager(UUID tenantId, int managerId, int page, int size) {
+        return taskRepository.getTasksByManager(tenantId, managerId, page, size);
     }
 }

@@ -12,7 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/task-advices")
@@ -24,12 +26,13 @@ public class TaskAdviceController {
     @Autowired
     private TaskService taskService;
 
+    // Helper method to get the current user from the authentication context
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return (User) authentication.getPrincipal();
     }
 
-    // Create a new task advice (returns TaskAdviceDTO)
+    // Create a new task advice
     @PostMapping
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     public ResponseEntity<?> createAdvice(@RequestBody CreateAdviceRequest request) {
@@ -37,26 +40,22 @@ public class TaskAdviceController {
             User currentUser = getCurrentUser();
             UUID tenantId = currentUser.getTenantId();
 
+            // Check if user has access to the task
             if (!taskService.userHasAccessToTask(currentUser.getUserId(), request.getTaskId(), tenantId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("You don't have permission to provide advice for this task");
             }
 
-            taskAdviceService.createAdvice(
+            TaskAdvice createdAdvice = taskAdviceService.createAdvice(
                     tenantId,
                     currentUser.getUserId(),
                     request.getTaskId(),
                     request.getAdviceText()
             );
 
-            // Return updated list of advice for the task
-            List<TaskAdviceDTO> advices = taskAdviceService.getAdviceForTaskAsDTO(request.getTaskId());
+            TaskAdviceDTO adviceDTO = taskAdviceService.convertToDTO(createdAdvice);
 
-            TaskAdviceListResponse response = TaskAdviceListResponse.builder()
-                    .advices(advices)
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(adviceDTO);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
@@ -73,6 +72,7 @@ public class TaskAdviceController {
             User currentUser = getCurrentUser();
             UUID tenantId = currentUser.getTenantId();
 
+            // Check if user has access to the task
             if (!taskService.userHasAccessToTask(currentUser.getUserId(), taskId, tenantId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("You don't have permission to access advice for this task");
@@ -99,7 +99,11 @@ public class TaskAdviceController {
             User currentUser = getCurrentUser();
             UUID tenantId = currentUser.getTenantId();
 
-            List<TaskAdviceDTO> adviceDTOs = taskAdviceService.getAdviceByManager(tenantId, currentUser.getUserId());
+            List<TaskAdvice> advices = taskAdviceService.getAdviceByManager(tenantId, currentUser.getUserId());
+
+            List<TaskAdviceDTO> adviceDTOs = advices.stream()
+                    .map(taskAdviceService::convertToDTO)
+                    .collect(Collectors.toList());
 
             TaskAdviceListResponse response = TaskAdviceListResponse.builder()
                     .advices(adviceDTOs)

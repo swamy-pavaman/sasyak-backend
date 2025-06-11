@@ -1,9 +1,6 @@
 package com.kapilagro.sasyak.controller;
 
-import com.kapilagro.sasyak.model.GetEmployeesResponse;
-import com.kapilagro.sasyak.model.PagedEmployeesResponse;
-import com.kapilagro.sasyak.model.User;
-import com.kapilagro.sasyak.model.UserDTO;
+import com.kapilagro.sasyak.model.*;
 import com.kapilagro.sasyak.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,6 +32,7 @@ public class UserManagerController {
         }
         return currentUser.getTenantId();
     }
+
 
     // Helper method to get the current user's ID
     private int getCurrentUserId() {
@@ -119,6 +117,22 @@ public class UserManagerController {
                     .body(new PagedEmployeesResponse());
         }
     }
+
+
+    @GetMapping("/supervisor-list")
+    public ResponseEntity<List<GetSupervisorsListResponse>> getSupervisorList() {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+
+            List<GetSupervisorsListResponse> supervisors = userService.getsupervisorsUnderManager(getCurrentUserId());
+            return ResponseEntity.ok(supervisors);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
     // Update a team member (manager can only update users in their team)
     @PutMapping("/team/{id}")
     public ResponseEntity<?> updateTeamMember(@PathVariable("id") int id, @RequestBody User userDetails) {

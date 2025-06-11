@@ -6,6 +6,8 @@ import com.kapilagro.sasyak.services.EmailService;
 import com.kapilagro.sasyak.services.UserService;
 import com.kapilagro.sasyak.utils.GeneratePasswordUtility;
 import com.kapilagro.sasyak.utils.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -153,41 +155,76 @@ public class UserAdminController {
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody CreateEmployeeRequest request) {
+        Logger log = LoggerFactory.getLogger(getClass());
+        log.debug("Entering createUser with request: {}", request);
         try {
             UUID tenantId = getCurrentUserTenantId();
+            log.debug("Retrieved tenantId: {}", tenantId);
+
+            // Validate managerId based on role
+            Integer managerId = request.getManagerId();
+            String role = request.getRole() != null ? request.getRole().toUpperCase() : "EMPLOYEE";
+
+            // Only SUPERVISOR can have a managerId
+            if (!"SUPERVISOR".equals(role)) {
+                managerId = null; // Force managerId to null for non-SUPERVISOR roles
+            } else if (managerId != null && managerId != 0) {
+                // Validate that managerId exists in the users table
+                boolean managerExists = adminService.userExitsById(managerId);
+                if (!managerExists) {
+                    log.error("Invalid managerId: {} for email: {}", managerId, request.getEmail());
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Invalid managerId: Manager does not exist.");
+                }
+            } else if (managerId == 0) {
+                // Explicitly handle managerId = 0
+                log.error("Invalid managerId: 0 provided for email: {}", request.getEmail());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Invalid managerId: 0 is not a valid manager ID.");
+            }
 
             User employee = User.builder()
                     .name(request.getName())
-                    .email(request.getEmail())
+                    .email(request.getEmail().toLowerCase())
                     .password(generatePasswordUtility.generateRandomPassword())
                     .phoneNumber(request.getPhone_number())
-                    .role(request.getRole() != null ? request.getRole() : "EMPLOYEE")
-                    .managerId(request.getManagerId())
+                    .role(role)
+                    .managerId(managerId)
                     .build();
+            log.debug("Created User object: name={}, email={}, role={}, managerId={}",
+                    employee.getName(), employee.getEmail(), employee.getRole(), employee.getManagerId());
+            log.debug("Generated password: {}", employee.getPassword());
 
-            System.out.println("user name :"+employee.getEmail()+"employee password :"+employee.getPassword());
-            String password =employee.getPassword();
+            String password = employee.getPassword();
+            log.debug("Calling adminService.createEmployee with email: {}, tenantId: {}", employee.getEmail(), tenantId);
             User createdEmployee = adminService.createEmployee(employee, tenantId);
-            emailService.sendMail(employee.getEmail(), request.getCompanyName(), password+"  this is added");
-//            System.out.println(employee.getPassword());
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    GetEmployeesResponse.EmployeeDTO.builder()
-                            .id(createdEmployee.getUserId())
-                            .name(createdEmployee.getName())
-                            .email(createdEmployee.getEmail())
-                            .role(createdEmployee.getRole())
-                            .build()
-            );
+            log.debug("Employee created successfully: userId={}, email={}", createdEmployee.getUserId(), createdEmployee.getEmail());
 
+            String company = userService.getCompanyName(tenantId);
+            log.debug("Sending email to: {}, company: {}", employee.getEmail(), company);
+            emailService.sendMail(employee.getEmail(), company, password);
+            log.debug("Email sent successfully to: {}", employee.getEmail());
+            GetEmployeesResponse.EmployeeDTO response = GetEmployeesResponse.EmployeeDTO.builder()
+                    .id(createdEmployee.getUserId())
+                    .name(createdEmployee.getName())
+                    .email(createdEmployee.getEmail())
+                    .role(createdEmployee.getRole())
+                    .build();
+            log.debug("Returning response: {}", response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException ex) {
+            log.error("Conflict in createUser: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("User already exists with this email.");
+            log.error("Data integrity violation in createUser: email={}, message={}", request.getEmail(), ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists with this email.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error creating employee: " + e.getMessage());
+            log.error("Unexpected error in createUser: email={}, message={}", request.getEmail(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating employee: " + e.getMessage());
+        } finally {
+            log.debug("Exiting createUser");
         }
     }
-
 
 
 
