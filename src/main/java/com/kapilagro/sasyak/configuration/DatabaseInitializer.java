@@ -17,19 +17,19 @@ public class DatabaseInitializer implements CommandLineRunner {
     private SuperAdminService superAdminService;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // ✅ Add this line
+    private PasswordEncoder passwordEncoder;
 
 
-    @Value("${superadmin.email:superadmin@example.com}")
+    @Value("${superadmin.email:}")
     private String superAdminEmail;
 
-    @Value("${superadmin.password:1010}")
+    @Value("${superadmin.password}")
     private String superAdminPassword;
 
-    @Value("${superadmin.name:Super Admin}")
+    @Value("${superadmin.name}")
     private String superAdminName;
 
-    @Value("${superadmin.tenantid:e28b5134-97f0-49c0-bb60-723806233141}")
+    @Value("${superadmin.tenantid}")
     private String tenantId;
 
 
@@ -45,6 +45,5 @@ public class DatabaseInitializer implements CommandLineRunner {
                 UUID.fromString(tenantId)
         );
 
-        System.out.println("Super Admin initialized with email: " + superAdmin.getEmail()+" "+superAdminPassword);
     }
 }

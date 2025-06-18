@@ -2,6 +2,7 @@ package com.kapilagro.sasyak.controller;
 
 import com.kapilagro.sasyak.model.*;
 import com.kapilagro.sasyak.services.AdminService;
+import com.kapilagro.sasyak.services.CatalogService;
 import com.kapilagro.sasyak.services.EmailService;
 import com.kapilagro.sasyak.services.UserService;
 import com.kapilagro.sasyak.utils.GeneratePasswordUtility;
@@ -58,6 +59,14 @@ public class UserAdminController {
             throw new IllegalStateException("Admin user is not associated with a tenant");
         }
         return currentUser.getTenantId();
+    }
+
+
+    // get  current user id
+    private int getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        return currentUser.getUserId();
     }
 
     @GetMapping("/manager-list")
