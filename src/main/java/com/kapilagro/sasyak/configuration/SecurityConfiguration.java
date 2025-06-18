@@ -33,6 +33,8 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // TODO change the origins
         configuration.setAllowedOrigins(List.of("http://localhost:9090", "http://localhost:8080", "https://super-admin-dashbaord-seven.vercel.app/"));
         // or specific domains
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

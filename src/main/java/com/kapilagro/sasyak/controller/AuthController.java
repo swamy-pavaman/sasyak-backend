@@ -23,7 +23,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder; // ✅ ADD THIS
+    private final PasswordEncoder passwordEncoder;
 
     // Constructor injection instead of field injection
     public AuthController(
@@ -45,22 +45,18 @@ public class AuthController {
         String email = user.getEmail();
         String rawPassword = user.getPassword();
 
-//        System.out.println("🚀 [DEBUG] Trying login for email: " + email);
-//        System.out.println("🔑 [DEBUG] Raw password: " + rawPassword);
+
 
         try {
             // Get user from DB
             User userFromDb = userService.getSuperAdminByEmail(email);
             if (userFromDb == null) {
-                //System.out.println("❌ [DEBUG] Super admin not found in DB for email: " + email);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authorized as super admin");
             }
 
             String encodedPassword = userFromDb.getPassword();
-            //System.out.println("🗄️ [DEBUG] Encoded password from DB: " + encodedPassword);
 
             boolean match = passwordEncoder.matches(rawPassword, encodedPassword);
-           // System.out.println("✅ [DEBUG] Password matches? " + match);
 
             if (!match) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials (manual match failed)");
@@ -86,14 +82,11 @@ public class AuthController {
                     .refreshToken(refreshToken)
                     .build();
 
-            System.out.println("✅ [DEBUG] Login successful for super admin: " + email);
             return ResponseEntity.ok(response);
 
         } catch (BadCredentialsException e) {
-            System.out.println("❌ [DEBUG] Spring Security authentication failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         } catch (Exception e) {
-            System.out.println("💥 [ERROR] Unexpected error during login: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error during login: " + e.getMessage());

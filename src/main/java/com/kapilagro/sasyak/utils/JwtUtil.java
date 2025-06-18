@@ -20,13 +20,23 @@ import java.util.UUID;
 @Component
 public class JwtUtil {
 
-    // TODO replace this hardcoded secret keys to application properties file
-    private static final String SECRET_kEY ="KA92Ab8OphARt/lQwY6u5Zn+LkwISP6m9ABjI3JQfVo=";
-    private static final String REFRESH_SECRET_KEY ="HyaFfpChC8IekjRGc5loPYid4/uHekm0dBmlJaYnvq0=";
 
 
-    private static final long ACCESS_TOKEN_EXPIRATION = (1000 * 60 * 30)*3; // 90 minutes
-    private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 days
+    @Value("${jwt.secret.key}")
+    private  String SECRET_kEY;
+
+    @Value("${jwt.refresh.key}")
+    private String REFRESH_SECRET_KEY;
+
+
+//
+//    // TODO replace this hardcoded secret keys to application properties file
+//    private static final String SECRET_kEY ="KA92Ab8OphARt/lQwY6u5Zn+LkwISP6m9ABjI3JQfVo=";
+//    private static final String REFRESH_SECRET_KEY ="HyaFfpChC8IekjRGc5loPYid4/uHekm0dBmlJaYnvq0=";
+
+
+    private static final long ACCESS_TOKEN_EXPIRATION = (1000 * 60 * 30)*6; // 90 minutes
+    private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 20; // 7 days
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_kEY));

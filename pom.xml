@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -42,7 +42,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -52,7 +51,6 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-<!--			<scope>runtime</scope>-->
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -69,27 +67,19 @@
 			<artifactId>jjwt-api</artifactId>
 			<version>0.12.6</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-commons</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-
-
-
 		<dependency>
 			<groupId>io.minio</groupId>
 			<artifactId>minio</artifactId>
 			<version>8.5.7</version>
 		</dependency>
-
-
-
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-impl</artifactId>
@@ -135,7 +125,50 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<!-- Default Surefire Plugin Configuration -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.5.2</version>
+				<configuration>
+					<!-- Default configuration for non-profile builds -->
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>local-build</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<environmentVariables>
+								<SPRING_DATASOURCE_URL>${env.SPRING_DATASOURCE_URL}</SPRING_DATASOURCE_URL>
+								<SPRING_DATASOURCE_USERNAME>${env.SPRING_DATASOURCE_USERNAME}</SPRING_DATASOURCE_USERNAME>
+								<SPRING_DATASOURCE_PASSWORD>${env.SPRING_DATASOURCE_PASSWORD}</SPRING_DATASOURCE_PASSWORD>
+								<SUPERADMIN_EMAIL>${env.SUPERADMIN_EMAIL}</SUPERADMIN_EMAIL>
+								<SUPERADMIN_PASSWORD>${env.SUPERADMIN_PASSWORD}</SUPERADMIN_PASSWORD>
+								<SUPERADMIN_NAME>${env.SUPERADMIN_NAME}</SUPERADMIN_NAME>
+								<SUPERADMIN_TENANTID>${env.SUPERADMIN_TENANTID}</SUPERADMIN_TENANTID>
+								<JWT_SECRET_KEY>${env.JWT_SECRET_KEY}</JWT_SECRET_KEY>
+								<JWT_REFRESH_KEY>${env.JWT_REFRESH_KEY}</JWT_REFRESH_KEY>
+								<MINIO_ENDPOINT>${env.MINIO_ENDPOINT}</MINIO_ENDPOINT>
+								<MINIO_ACCESS_KEY>${env.MINIO_ACCESS_KEY}</MINIO_ACCESS_KEY>
+								<MINIO_SECRET_KEY>${env.MINIO_SECRET_KEY}</MINIO_SECRET_KEY>
+								<MINIO_BUCKET_NAME>${env.MINIO_BUCKET_NAME}</MINIO_BUCKET_NAME>
+								<SPRING_MAIL_USERNAME>${env.SPRING_MAIL_USERNAME}</SPRING_MAIL_USERNAME>
+								<SPRING_MAIL_PASSWORD>${env.SPRING_MAIL_PASSWORD}</SPRING_MAIL_PASSWORD>
+							</environmentVariables>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
