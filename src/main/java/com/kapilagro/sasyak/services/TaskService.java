@@ -197,15 +197,13 @@ public class TaskService {
     }
 
     @Transactional
-    public boolean updateTaskStatus(int taskId, String status, int userId) {
+    public boolean updateTaskStatus(int taskId, String status,String advice, int userId) {
         Optional<Task> taskOpt = taskRepository.getById(taskId);
         if (taskOpt.isEmpty()) {
             return false;
         }
-
         Task task = taskOpt.get();
-        boolean updated = taskRepository.updateStatus(taskId, status);
-
+        boolean updated = taskRepository.updateStatus(taskId, status,advice);
         if (updated) {
             // Get the user who created the task for notification
             Optional<User> creator = userRepository.getUserById(task.getCreatedById());
