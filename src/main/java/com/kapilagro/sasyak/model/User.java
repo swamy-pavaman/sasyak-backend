@@ -3,6 +3,7 @@ package com.kapilagro.sasyak.model;
 import lombok.*;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -21,9 +22,10 @@ public class User {
     private String password;
     private String profile;
     private String location;
+    private String resetToken; // Added to store the reset token
+    private Date resetTokenExpiry; // Corrected type from String to Date
 
-//    private String oauthProvider;
-//    private String oAuthProviderId;
+    // Other fields
     private UUID tenantId; // New field to link user to a tenant
     private Integer managerId;
 }

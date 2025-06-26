@@ -80,8 +80,6 @@ public class SuperAdminController {
             // Create the tenant with admin
             TenantService.TenantCreationResult result = superAdminService.createTenant(tenant, adminUser);
 
-
-
             // Build response
             CreateTenantResponse response = CreateTenantResponse.builder()
                     .message("Tenant created successfully.")
@@ -103,7 +101,9 @@ public class SuperAdminController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+
                     .body(CreateTenantResponse.builder()
                             .message("Error creating tenant: " + e.getMessage())
                             .build());
@@ -136,7 +136,7 @@ public class SuperAdminController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-           // e.printStackTrace();
+            // e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new GetAllTenantsResponse());
         }

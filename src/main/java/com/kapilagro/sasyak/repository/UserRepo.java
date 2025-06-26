@@ -54,18 +54,15 @@ public class UserRepo {
         // phone_number
         try {
             user.setPhoneNumber(rs.getString("phone_number"));
+            System.out.println("Final value in User object 12= " +user.getPhoneNumber());
         } catch (Exception e) {
             user.setPhoneNumber(null);
         }
 
-        // manager_id (nullable Integer)
         try {
-            int managerId = rs.getInt("manager_id");
-            if (!rs.wasNull()) {
-                user.setManagerId(managerId);
-            } else {
-                user.setManagerId(null);
-            }
+            Integer managerId = (Integer) rs.getObject("manager_id");
+            user.setManagerId(managerId);
+            System.out.println("Final value in User object = " + managerId);
         } catch (Exception e) {
             user.setManagerId(null);
         }
@@ -143,7 +140,7 @@ public class UserRepo {
         }
     }
 
-//    @Transactional
+    //    @Transactional
 //    public boolean update(User user) {
 //        String query = "UPDATE users SET name = ?, email = ?, role = ?, phone_number = ?, manager_id = ? WHERE user_id = ?";
 //
@@ -173,50 +170,50 @@ public class UserRepo {
 //
 //        return updated > 0;
 //    }
-@Transactional
-public boolean update(User user) {
-    String query = """
+    @Transactional
+    public boolean update(User user) {
+        String query = """
     UPDATE users\s
     SET name = ?, email = ?, role = ?, phone_number = ?, manager_id = ?, location = ?, profile = ?\s
     WHERE user_id = ?
 """;
 
-    int updated = template.update(connection -> {
-        PreparedStatement ps = connection.prepareStatement(query);
-        ps.setString(1, user.getName());
-        ps.setString(2, user.getEmail());
-        ps.setString(3, user.getRole());
-        ps.setString(4, user.getPhoneNumber());
+        int updated = template.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, user.getName());
+            ps.setString(2, user.getEmail());
+            ps.setString(3, user.getRole());
+            ps.setString(4, user.getPhoneNumber());
 
 
 
-        // Set manager_id (nullable)
-        if (user.getManagerId() != null) {
-            ps.setInt(5, user.getManagerId());
-        } else {
-            ps.setNull(5, java.sql.Types.INTEGER);
+            // Set manager_id (nullable)
+            if (user.getManagerId() != null) {
+                ps.setInt(5, user.getManagerId());
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
+
+            // Set location and profile_image
+            ps.setString(6, user.getLocation());
+            ps.setString(7, user.getProfile());
+
+            // Set user_id for WHERE clause
+            ps.setInt(8, user.getUserId());
+
+            return ps;
+        });
+        System.out.println("Updating phone number: " + user.getPhoneNumber());
+        // Update password only if it's provided
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            String passwordQuery = "UPDATE users SET password = ? WHERE user_id = ?";
+            template.update(passwordQuery, user.getPassword(), user.getUserId());
         }
 
-        // Set location and profile_image
-        ps.setString(6, user.getLocation());
-        ps.setString(7, user.getProfile());
+        System.out.println("Update status: " + updated);
 
-        // Set user_id for WHERE clause
-        ps.setInt(8, user.getUserId());
-
-        return ps;
-    });
-    System.out.println("Updating phone number: " + user.getPhoneNumber());
-    // Update password only if it's provided
-    if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-        String passwordQuery = "UPDATE users SET password = ? WHERE user_id = ?";
-        template.update(passwordQuery, user.getPassword(), user.getUserId());
+        return updated > 0;
     }
-
-    System.out.println("Update status: " + updated);
-
-    return updated > 0;
-}
 
 
     public Optional<User> getUserById(int id) {
