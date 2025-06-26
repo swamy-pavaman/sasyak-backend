@@ -25,7 +25,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-// TODO update with original origin
 @RequestMapping("/api")
 public class SuperAdminController {
 
@@ -56,33 +55,37 @@ public class SuperAdminController {
      * Create a new tenant with admin user
      * Only accessible by super admin
      */
+
+
     @PostMapping("/tenants")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<CreateTenantResponse> createTenant(@RequestBody CreateTenantRequest request) throws TenantAlreadyExistsException {
+        long start = System.currentTimeMillis();
+        System.out.println("🚀 [createTenant] Started at " + start);
+
         if (superAdminService.existsByContactEmail(request.getContactEmail())) {
+            System.out.println("❌ [createTenant] Tenant already exists: " + request.getContactEmail());
             throw new TenantAlreadyExistsException("A tenant with this contact email already exists.");
         }
 
         try {
-            // Create tenant model from request
+            System.out.println("📦 [createTenant] Building Tenant & AdminUser models");
+
             Tenant tenant = Tenant.builder()
                     .companyName(request.getCompanyName())
                     .contactEmail(request.getContactEmail())
                     .build();
 
-            // Create admin user model from request
             User adminUser = User.builder()
                     .name(request.getAdminName())
                     .email(request.getAdminEmail())
                     .role(request.getRole() != null ? request.getRole() : "ADMIN")
                     .build();
 
-            // Create the tenant with admin
+            System.out.println("⚙️ [createTenant] Calling superAdminService.createTenant...");
             TenantService.TenantCreationResult result = superAdminService.createTenant(tenant, adminUser);
+            System.out.println("✅ [createTenant] Tenant created successfully in " + (System.currentTimeMillis() - start) + "ms");
 
-
-
-            // Build response
             CreateTenantResponse response = CreateTenantResponse.builder()
                     .message("Tenant created successfully.")
                     .tenant(CreateTenantResponse.TenantDTO.builder()
@@ -96,17 +99,89 @@ public class SuperAdminController {
                             .email(result.getAdminUser().getEmail())
                             .build())
                     .build();
-            //TODO send mail here
-            emailService.sendMail(request.getAdminEmail(),request.getCompanyName(), result.getGeneratedPassword());
 
+            System.out.println("📧 [createTenant] Sending email to " + request.getAdminEmail());
+            try {
+                emailService.sendMail(
+                        request.getAdminEmail(),
+                        request.getCompanyName(),
+                        result.getGeneratedPassword(),
+                        "Admin",
+                        result.getAdminUser().getName()
+                );
+
+                System.out.println(result.getAdminUser().getName()+"  nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+                System.out.println("📨 [createTenant] Email sent in " + (System.currentTimeMillis() - start) + "ms");
+            } catch (Exception emailEx) {
+                System.err.println("❌ [createTenant] Failed to send email: " + emailEx.getMessage());
+                emailEx.printStackTrace();
+            }
+
+            System.out.println("✅ [createTenant] Completed in " + (System.currentTimeMillis() - start) + "ms");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
         } catch (Exception e) {
+            System.err.println("❌ [createTenant] Exception occurred: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(CreateTenantResponse.builder()
                             .message("Error creating tenant: " + e.getMessage())
                             .build());
         }
     }
+
+
+//    @PostMapping("/tenants")
+//    @PreAuthorize("hasRole('SUPER_ADMIN')")
+//    public ResponseEntity<CreateTenantResponse> createTenant(@RequestBody CreateTenantRequest request) throws TenantAlreadyExistsException {
+//        if (superAdminService.existsByContactEmail(request.getContactEmail())) {
+//            throw new TenantAlreadyExistsException("A tenant with this contact email already exists.");
+//        }
+//
+//        try {
+//            // Create tenant model from request
+//            Tenant tenant = Tenant.builder()
+//                    .companyName(request.getCompanyName())
+//                    .contactEmail(request.getContactEmail())
+//                    .build();
+//
+//            // Create admin user model from request
+//            User adminUser = User.builder()
+//                    .name(request.getAdminName())
+//                    .email(request.getAdminEmail())
+//                    .role(request.getRole() != null ? request.getRole() : "ADMIN")
+//                    .build();
+//
+//            // Create the tenant with admin
+//            TenantService.TenantCreationResult result = superAdminService.createTenant(tenant, adminUser);
+//
+//
+//
+//            // Build response
+//            CreateTenantResponse response = CreateTenantResponse.builder()
+//                    .message("Tenant created successfully.")
+//                    .tenant(CreateTenantResponse.TenantDTO.builder()
+//                            .id(String.valueOf(result.getTenant().getTenantId()))
+//                            .companyName(result.getTenant().getCompanyName())
+//                            .contactEmail(result.getTenant().getContactEmail())
+//                            .build())
+//                    .adminUser(CreateTenantResponse.AdminUserDTO.builder()
+//                            .id(result.getAdminUser().getUserId())
+//                            .name(result.getAdminUser().getName())
+//                            .email(result.getAdminUser().getEmail())
+//                            .build())
+//                    .build();
+//            //TODO send mail here
+//            emailService.sendMail(request.getAdminEmail(),request.getCompanyName(), result.getGeneratedPassword(),"Admin",result.getAdminUser().getName());
+//
+//            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(CreateTenantResponse.builder()
+//                            .message("Error creating tenant: " + e.getMessage())
+//                            .build());
+//        }
+//    }
     /**
      * Get all tenants
      * Only accessible by super admin

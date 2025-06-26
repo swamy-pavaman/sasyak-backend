@@ -211,7 +211,7 @@ public class UserAdminController {
 
             String company = userService.getCompanyName(tenantId);
             log.debug("Sending email to: {}, company: {}", employee.getEmail(), company);
-            emailService.sendMail(employee.getEmail(), company, password);
+            emailService.sendMail(employee.getEmail(), company, password,createdEmployee.getRole(),createdEmployee.getName());
             log.debug("Email sent successfully to: {}", employee.getEmail());
             GetEmployeesResponse.EmployeeDTO response = GetEmployeesResponse.EmployeeDTO.builder()
                     .id(createdEmployee.getUserId())
