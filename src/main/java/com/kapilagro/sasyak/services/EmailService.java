@@ -57,29 +57,23 @@ public class EmailService {
             e.printStackTrace();
         }
     }
-    public void sendResetEmail(String toEmail, String userName, String resetLink) {
+    public void sendResetEmail(String to, String name, String resetLink) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+        helper.setTo(to);
+        helper.setSubject("Password Reset Request - Kapil Agro");
+        helper.setText(String.format(
+                "Dear %s,\n\nPlease click the following link to reset your password:\n%s\n\nThis link will expire in 1 hour.\n\nRegards,\nKapil Agro Team",
+                name, resetLink), true);
+
         try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            helper.setFrom(SENDER_MAIL);
-            helper.setTo(toEmail);
-            helper.setSubject("Password Reset Request - Kapil Agro");
-            String htmlContent = String.format("""
-                <!DOCTYPE html>
-                <html>
-                  <head><meta charset="UTF-8" /><title>Password Reset - Kapil Agro</title></head>
-                  <body>
-                    <p>Hello %s,</p>
-                    <p>Click <a href="%s">here</a> to reset your password. This link expires in 1 hour.</p>
-                  </body>
-                </html>
-                """, userName, resetLink);
-            helper.setText(htmlContent, true);
-            mailSender.send(mimeMessage);
-            System.out.println("Reset email sent successfully to " + toEmail);
-        } catch (MessagingException e) {
-            System.err.println("Failed to send reset email to " + toEmail + ": " + e.getMessage());
+            mailSender.send(message);
+            System.out.println("✅ [DEBUG] Email sent to: " + to);
+        } catch (Exception e) {
+            System.out.println("💥 [ERROR] Failed to send email to " + to + ": " + e.getMessage());
             e.printStackTrace();
+            throw e;
         }
     }
 

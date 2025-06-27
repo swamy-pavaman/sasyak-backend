@@ -186,32 +186,63 @@ public class AuthController {
         }
     }
 
-    // Forgot Password Endpoint
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody PasswordResetRequest request) {
         try {
+            // Validate email
+            if (request.getEmail() == null || request.getEmail().isEmpty()) {
+                System.out.println("❌ [DEBUG] Email is required");
+                return ResponseEntity.badRequest().body("Email is required");
+            }
+
+            // Fetch user
             User user = userService.getUserByUserEmail(request.getEmail());
             if (user == null) {
+                System.out.println("❌ [DEBUG] User not found for email: " + request.getEmail());
                 return ResponseEntity.badRequest().body("Email not found");
             }
 
-            // Generate a reset token (short-lived JWT)
+            // Generate reset token
             Map<String, Object> claims = new HashMap<>();
             claims.put("userId", user.getUserId());
             claims.put("email", user.getEmail());
-            String resetToken = jwtUtil.generateResetToken(claims, jwtUtil.RESET_TOKEN_EXPIRY); // 1-hour expiry
+            String resetToken;
+            try {
+                resetToken = jwtUtil.generateResetToken(claims, jwtUtil.RESET_TOKEN_EXPIRY);
+                System.out.println("✅ [DEBUG] Reset token generated for email: " + request.getEmail());
+            } catch (Exception e) {
+                System.out.println("💥 [ERROR] Failed to generate reset token for email: " + request.getEmail() + ": " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to generate reset token: " + e.getMessage());
+            }
 
-            // Store token and expiry in user object
+            // Update user with reset token and expiry
             user.setResetToken(resetToken);
             user.setResetTokenExpiry(new Date(System.currentTimeMillis() + jwtUtil.RESET_TOKEN_EXPIRY));
-            userService.updateUser(user); // Save updated user
+            try {
+                userService.updateUser(user);
+                System.out.println("✅ [DEBUG] User updated with reset token for email: " + request.getEmail());
+            } catch (Exception e) {
+                System.out.println("💥 [ERROR] Failed to update user with reset token for email: " + request.getEmail() + ": " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update user: " + e.getMessage());
+            }
 
-            // Send reset email with token
+            // Send reset email
             String resetLink = String.format("%s/reset-password?token=%s", "https://kapilagro.com", resetToken);
-            emailService.sendResetEmail(user.getEmail(), user.getName(), resetLink);
+            try {
+                emailService.sendResetEmail(user.getEmail(), user.getName(), resetLink);
+                System.out.println("✅ [DEBUG] Reset link sent to email: " + request.getEmail());
+            } catch (Exception e) {
+                System.out.println("💥 [ERROR] Failed to send reset email to: " + request.getEmail() + ": " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send reset email: " + e.getMessage());
+            }
 
             return ResponseEntity.ok("Reset link sent to your email");
         } catch (Exception e) {
+            System.out.println("💥 [ERROR] Unexpected error in forgotPassword for email: " + request.getEmail() + ": " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process request: " + e.getMessage());
         }
     }

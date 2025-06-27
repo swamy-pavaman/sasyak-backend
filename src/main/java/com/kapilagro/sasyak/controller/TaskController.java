@@ -114,11 +114,11 @@ public class TaskController {
                 TaskDTO taskDTO = taskService.convertToDTO(task);
 
                 // Get advice for this task
-                //List<TaskAdviceDTO> advices = taskAdviceService.getAdviceForTaskAsDTO(taskId);
+                List<TaskAdviceDTO> advices = taskAdviceService.getAdviceForTaskAsDTO(taskId);
 
                 TaskDetailResponse response = TaskDetailResponse.builder()
                         .task(taskDTO)
-                        .advice(taskOpt.get().getAdvice())
+                        .advices(advices)
                         .build();
 
                 return ResponseEntity.ok(response);
@@ -358,7 +358,7 @@ public class TaskController {
                         .body("You don't have permission to update this task");
             }
 
-            boolean updated = taskService.updateTaskStatus(taskId, request.getStatus(),request.getAdvice(), currentUser.getUserId());
+            boolean updated = taskService.updateTaskStatus(taskId, request.getStatus(), currentUser.getUserId());
 
             if (updated) {
                 Optional<Task> updatedTask = taskService.getTaskById(taskId);

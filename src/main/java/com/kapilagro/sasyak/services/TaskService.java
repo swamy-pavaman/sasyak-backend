@@ -195,15 +195,17 @@ public class TaskService {
     public List<Task> getAllTasks(UUID tenantId, int page, int size) {
         return taskRepository.getByTenantId(tenantId, page, size);
     }
-
+    // Update task status
     @Transactional
-    public boolean updateTaskStatus(int taskId, String status,String advice, int userId) {
+    public boolean updateTaskStatus(int taskId, String status, int userId) {
         Optional<Task> taskOpt = taskRepository.getById(taskId);
         if (taskOpt.isEmpty()) {
             return false;
         }
+
         Task task = taskOpt.get();
-        boolean updated = taskRepository.updateStatus(taskId, status,advice);
+        boolean updated = taskRepository.updateStatus(taskId, status);
+
         if (updated) {
             // Get the user who created the task for notification
             Optional<User> creator = userRepository.getUserById(task.getCreatedById());
@@ -222,6 +224,7 @@ public class TaskService {
                         updaterName + " has updated the status of your task to " + status
                 );
             }
+
 
             // If task is assigned to someone, notify them too (if they didn't update it)
             if (task.getAssignedToId() != null && task.getAssignedToId() != userId) {

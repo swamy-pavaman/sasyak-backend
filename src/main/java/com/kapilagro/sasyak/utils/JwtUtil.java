@@ -39,14 +39,20 @@ public class JwtUtil {
         return generateToken(userDetails, getSigningKey(), ACCESS_TOKEN_EXPIRATION);
     }
 
-    // Generate Reset Token
-    public String generateResetToken(Map<String, Object> claims, long expiryMillis) {
-        return Jwts.builder()
-                .claims(claims)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiryMillis))
-                .signWith(getSigningKey())
-                .compact();
+    public String generateResetToken(Map<String, Object> claims, long expiration) {
+        try {
+            String token = Jwts.builder()
+                    .setClaims(claims)
+                    .setIssuedAt(new Date(System.currentTimeMillis()))
+                    .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                    .signWith(getSigningKey(), SignatureAlgorithm.HS256) // Changed from secretKey to getSigningKey()
+                    .compact();
+            System.out.println("✅ [DEBUG] Generated reset token: " + token.substring(0, 10) + "..."); // Log partial token for security
+            return token;
+        } catch (Exception e) {
+            System.out.println("💥 [ERROR] Failed to generate reset token: " + e.getMessage());
+            throw e;
+        }
     }
 
     // Generate Refresh Token
@@ -86,7 +92,19 @@ public class JwtUtil {
 
     // Extract Email from Reset Token
     public String extractUsernameFromResetToken(String token) {
-        return extractClaims(token, getSigningKey()).get("email", String.class);
+        try {
+            String username = Jwts.parser()
+                    .verifyWith(getSigningKey()) // Changed from secretKey to getSigningKey()
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("email", String.class);
+            System.out.println("✅ [DEBUG] Extracted username from reset token: " + username);
+            return username;
+        } catch (Exception e) {
+            System.out.println("❌ [DEBUG] Failed to extract username from reset token: " + e.getMessage());
+            return null;
+        }
     }
 
     // Validate Access Token
@@ -101,12 +119,16 @@ public class JwtUtil {
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token, getRefreshSigningKey());
     }
 
-    // Validate Reset Token
     public boolean validateResetToken(String token) {
         try {
-            extractClaims(token, getSigningKey());
-            return !isTokenExpired(token, getSigningKey());
+            Jwts.parser()
+                    .verifyWith(getSigningKey()) // Changed from secretKey to getSigningKey()
+                    .build()
+                    .parseSignedClaims(token);
+            System.out.println("✅ [DEBUG] Reset token validated successfully");
+            return true;
         } catch (Exception e) {
+            System.out.println("❌ [DEBUG] Invalid reset token: " + e.getMessage());
             return false;
         }
     }

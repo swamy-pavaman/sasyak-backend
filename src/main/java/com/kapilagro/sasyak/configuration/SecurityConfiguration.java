@@ -30,22 +30,23 @@ public class SecurityConfiguration {
     private final UserDetailsService userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
     private final PasswordEncoder passwordEncoder;
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:9090", "http://localhost:8080", "https://super-admin-dashbaord-seven.vercel.app/"));
-        // or specific domains
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-    // Constructor injection instead of field injection
+
     public SecurityConfiguration(UserDetailsService userDetailsService, JwtAuthFilter jwtAuthFilter, PasswordEncoder passwordEncoder) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthFilter = jwtAuthFilter;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:9090", "http://localhost:8080", "https://super-admin-dashbaord-seven.vercel.app/"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true); // Allow credentials if needed
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
@@ -54,8 +55,8 @@ public class SecurityConfiguration {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(authorize -> {
                     authorize
-                            .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
-                            .requestMatchers("/api/auth/**").permitAll()
+                            .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll() // Allow preflight requests
+                            .requestMatchers("/api/auth/**").permitAll() // Permit all auth endpoints
                             .requestMatchers("/api/tenants").hasRole("SUPER_ADMIN")
                             .requestMatchers("/api/admin/**").hasRole("ADMIN")
                             .anyRequest().authenticated();

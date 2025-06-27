@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateTaskStatusRequest {
     private String status; // "approved", "rejected", "implemented"
-    private String advice; // Optional comment about the status change
+    private String comment; // Optional comment about the status change
 
 }
