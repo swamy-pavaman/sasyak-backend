@@ -20,7 +20,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/catalog")
-@PreAuthorize("hasRole('ADMIN')")
 public class CatalogController {
 
 
@@ -69,6 +68,7 @@ public class CatalogController {
     }
 
     @GetMapping("")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getCatalog() {
         try {
             UUID tenantId = getCurrentUserTenantId();
@@ -86,6 +86,7 @@ public class CatalogController {
 
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteCatalog(@PathVariable("id") int id) {
         try {
             UUID tenantId = getCurrentUserTenantId();
@@ -107,6 +108,7 @@ public class CatalogController {
     }
 
     @GetMapping("/{category}")
+    @PreAuthorize("hasRole('ADMIN','MANAGER', 'SUPERVISOR')")
     public ResponseEntity<?> getCatalogByCategory(@PathVariable("category") String category) {
         try {
             UUID tenantId = getCurrentUserTenantId();
@@ -130,9 +132,8 @@ public class CatalogController {
         }
     }
 
-// Additional helpful endpoints
-
     @GetMapping("/categories")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getDistinctCategories() {
         try {
             UUID tenantId = getCurrentUserTenantId();
@@ -149,6 +150,7 @@ public class CatalogController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateCatalog(@PathVariable("id") int id, @RequestBody CatalogRequest catalogRequest) {
         try {
             UUID tenantId = getCurrentUserTenantId();
@@ -173,6 +175,7 @@ public class CatalogController {
     }
 
     @GetMapping("/item/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getCatalogById(@PathVariable("id") int id) {
         try {
             UUID tenantId = getCurrentUserTenantId();

@@ -13,7 +13,6 @@ public class NotificationCreationService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
     /**
      * Creates a notification for a specific user
      *

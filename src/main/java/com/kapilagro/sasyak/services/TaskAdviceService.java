@@ -69,13 +69,17 @@ public class TaskAdviceService {
         Optional<User> manager = userRepository.getUserById(managerId);
         String managerName = manager.map(User::getName).orElse("A manager");
 
-        notificationService.createAdviceNotification(
-                tenantId,
-                task.getCreatedById(),
-                taskId,
-                "New Advice Received",
-                managerName + " has provided advice on your task."
-        );
+
+        Optional<User> user=userRepository.getUserById(task.getCreatedById());
+        if(user.get().getRole().equals("SUPERVISOR")){
+            notificationService.createAdviceNotification(
+                    tenantId,
+                    task.getCreatedById(),
+                    taskId,
+                    "New Advice Received",
+                    managerName + " has provided advice on your task."
+            );
+        }
 
         // If task is assigned to someone, notify them too (if they're not the creator)
         if (task.getAssignedToId() != null && task.getAssignedToId() != task.getCreatedById()) {

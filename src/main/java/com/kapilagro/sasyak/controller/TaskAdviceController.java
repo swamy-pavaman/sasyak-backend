@@ -52,7 +52,6 @@ public class TaskAdviceController {
                     request.getTaskId(),
                     request.getAdviceText()
             );
-
             TaskAdviceDTO adviceDTO = taskAdviceService.convertToDTO(createdAdvice);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(adviceDTO);
