@@ -5,6 +5,8 @@ import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
+
 
 @SpringBootApplication
 public class SasyakApplication {

@@ -1,9 +1,11 @@
 package com.kapilagro.sasyak.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -19,6 +21,9 @@ public class TaskAdvice {
     private int taskId;
     private int managerId;
     private String adviceText;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Kolkata")
+    private OffsetDateTime createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Kolkata")
+    private OffsetDateTime updatedAt;
 }

@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +31,7 @@ public class TenantRepo {
                 .tenantId(UUID.fromString(rs.getString("tenant_id")))
                 .companyName(rs.getString("company_name"))
                 .contactEmail(rs.getString("contact_email"))
-                .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+                .createdAt(rs.getObject("created_at", OffsetDateTime.class))
                 .build();
 
         // Handle active status if it exists in the result set
@@ -58,7 +59,7 @@ public class TenantRepo {
             ps.setObject(1, tenantId); // tenant_id
             ps.setString(2, tenant.getCompanyName()); // name (not companyName!)
             ps.setString(3, tenant.getContactEmail());
-            ps.setTimestamp(4, Timestamp.valueOf(tenant.getCreatedAt()));
+            ps.setObject(4, tenant.getCreatedAt());
             ps.setBoolean(5, tenant.isActive()); // NEW active column
             return ps;
         });

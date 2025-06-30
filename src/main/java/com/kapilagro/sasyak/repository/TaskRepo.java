@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.postgresql.util.PGobject;
@@ -45,8 +46,8 @@ public class TaskRepo {
                 .description(rs.getString("description"))
                 .implementationJson(rs.getString("implementation"))
                 .status(status)
-                .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
-                .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
+                .createdAt(rs.getObject("created_at", OffsetDateTime.class))
+                .updatedAt(rs.getObject("updated_at", OffsetDateTime.class))
                 .build();
     };
 

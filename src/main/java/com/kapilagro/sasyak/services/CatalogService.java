@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,7 +46,7 @@ public class CatalogService {
                     .details(request.getDetails() != null ? request.getDetails().trim() : null)
                     .tenantId(tenantId)
                     .createdBy(createdBy)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(OffsetDateTime.now(ZoneId.of("Asia/Kolkata")))
                     .build();
 
             // Save to database
@@ -185,8 +187,7 @@ public class CatalogService {
             catalog.setCategory(request.getCategory().trim());
             catalog.setValue(request.getValue().trim());
             catalog.setDetails(request.getDetails() != null ? request.getDetails().trim() : null);
-            catalog.setUpdatedAt(LocalDateTime.now());
-
+            catalog.setUpdatedAt(OffsetDateTime.now(ZoneId.of("Asia/Kolkata")));
             // Update in database
             boolean updated = catalogRepo.update(catalog);
 

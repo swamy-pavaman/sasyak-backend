@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,8 +33,8 @@ public class TaskAdviceRepo {
                 .taskId(rs.getInt("task_id"))
                 .managerId(rs.getInt("manager_id"))
                 .adviceText(rs.getString("advice_text"))
-                .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
-                .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
+                .createdAt(rs.getObject("created_at", OffsetDateTime.class))
+                .updatedAt(rs.getObject("updated_at", OffsetDateTime.class))
                 .build();
     };
 

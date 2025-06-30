@@ -158,9 +158,122 @@ public class UserAdminController {
         }
     }
 
+// already there assign to endpoint is working in same way
+//    @PostMapping("/reassign-supervisor/{supervisorId}/to-manager/{managerId}")
+//    public ResponseEntity<?> reAssignManager(
+//            @PathVariable("supervisorId") int supervisorId,
+//            @PathVariable("managerId") int managerId) {
+//        Logger log = LoggerFactory.getLogger(getClass());
+//        log.debug("Entering reAssignManager with supervisorId: {}, managerId: {}", supervisorId, managerId);
+//
+//        try {
+//            UUID tenantId = getCurrentUserTenantId();
+//            log.debug("Retrieved tenantId: {}", tenantId);
+//
+//            // Check if the supervisor exists and belongs to the admin's tenant
+//            Optional<User> supervisorOpt = userService.getUserById(supervisorId);
+//            if (!supervisorOpt.isPresent() || !supervisorOpt.get().getTenantId().equals(tenantId)) {
+//                log.error("Supervisor not found or does not belong to tenant: supervisorId={}, tenantId={}", supervisorId, tenantId);
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body("Supervisor not found or does not belong to your tenant");
+//            }
+//
+//            User supervisor = supervisorOpt.get();
+//            // Verify the user is a supervisor
+//            if (!"SUPERVISOR".equalsIgnoreCase(supervisor.getRole())) {
+//                log.error("User is not a supervisor: userId={}, role={}", supervisorId, supervisor.getRole());
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body("The specified user is not a supervisor");
+//            }
+//
+//            // Check if the manager exists and belongs to the admin's tenant
+//            Optional<User> managerOpt = userService.getUserById(managerId);
+//            if (!managerOpt.isPresent() || !managerOpt.get().getTenantId().equals(tenantId)) {
+//                log.error("Manager not found or does not belong to tenant: managerId={}, tenantId={}", managerId, tenantId);
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body("Manager not found or does not belong to your tenant");
+//            }
+//
+//            // Verify the user is a manager
+//            if (!"MANAGER".equalsIgnoreCase(managerOpt.get().getRole())) {
+//                log.error("User is not a manager: userId={}, role={}", managerId, managerOpt.get().getRole());
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body("The specified user is not a manager");
+//            }
+//
+//            // Update the supervisor's manager ID
+//            supervisor.setManagerId(managerId);
+//            User updatedSupervisor = userService.updateUser(supervisor);
+//            log.debug("Supervisor reassigned successfully: supervisorId={}, newManagerId={}", supervisorId, managerId);
+//
+//            // Prepare response
+//            UserDTO userDTO = UserDTO.builder()
+//                    .id(updatedSupervisor.getUserId())
+//                    .name(updatedSupervisor.getName())
+//                    .email(updatedSupervisor.getEmail())
+//                    .role(updatedSupervisor.getRole())
+//                    .phoneNumber(updatedSupervisor.getPhoneNumber())
+//                    .tenantId(updatedSupervisor.getTenantId())
+//                    .build();
+//
+//            log.debug("Returning response: {}", userDTO);
+//            return ResponseEntity.ok(userDTO);
+//
+//        } catch (Exception e) {
+//            log.error("Error reassigning manager: supervisorId={}, managerId={}, message={}",
+//                    supervisorId, managerId, e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("Error reassigning manager: " + e.getMessage());
+//        } finally {
+//            log.debug("Exiting reAssignManager");
+//        }
+//    }
+
 
 
     // Create a new user (admin can only create users in their tenant)
+
+
+    @GetMapping("/supervisor/{supervisor_id}/assigned-manager")
+    public ResponseEntity<SupervisorsManagerResponse> getSupervisorsManager(@PathVariable("supervisor_id") int supervisorId) {
+        try {
+            UUID tenantId = getCurrentUserTenantId();
+            Optional<User> supervisorOpt = userService.getUserById(supervisorId);
+
+            if (supervisorOpt.isPresent()) {
+                User supervisor = supervisorOpt.get();
+
+                // Verify supervisor belongs to admin's tenant
+                if (!supervisor.getTenantId().equals(tenantId)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new SupervisorsManagerResponse(null, null));
+                }
+
+                // Check if supervisor has a manager assigned
+                if (supervisor.getManagerId() != null) {
+                    Optional<User> managerOpt = userService.getUserById(supervisor.getManagerId());
+
+                    if (managerOpt.isPresent()) {
+                        User manager = managerOpt.get();
+                        SupervisorsManagerResponse response = new SupervisorsManagerResponse(
+                                manager.getName(),
+                                manager.getEmail()
+                        );
+                        return ResponseEntity.ok(response);
+                    }
+                }
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new SupervisorsManagerResponse(null, null));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new SupervisorsManagerResponse(null, null));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new SupervisorsManagerResponse(null, null));
+        }
+    }
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody CreateEmployeeRequest request) {
@@ -211,7 +324,7 @@ public class UserAdminController {
 
             String company = userService.getCompanyName(tenantId);
             log.debug("Sending email to: {}, company: {}", employee.getEmail(), company);
-            emailService.sendMail(employee.getEmail(), company, password);
+            emailService.sendMail(employee.getEmail(), company, password,createdEmployee.getRole(),createdEmployee.getName());
             log.debug("Email sent successfully to: {}", employee.getEmail());
             GetEmployeesResponse.EmployeeDTO response = GetEmployeesResponse.EmployeeDTO.builder()
                     .id(createdEmployee.getUserId())

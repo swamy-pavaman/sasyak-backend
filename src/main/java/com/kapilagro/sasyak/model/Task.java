@@ -1,9 +1,11 @@
 package com.kapilagro.sasyak.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -24,8 +26,10 @@ public class Task {
     private String description;
     private String implementationJson; // JSONB in database
     private String status; // "submitted", "approved", "rejected", "implemented"
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Kolkata")
+    private OffsetDateTime createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Kolkata")
+    private OffsetDateTime updatedAt;
 
     // Helper methods for status
     public boolean isSubmitted() {
