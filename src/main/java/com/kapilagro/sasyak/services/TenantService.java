@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -50,7 +52,7 @@ public class TenantService {
     @Transactional
     public TenantCreationResult createTenantWithAdmin(Tenant tenant, User adminUser) {
         // Set current time for tenant creation
-        tenant.setCreatedAt(LocalDateTime.now());
+        tenant.setCreatedAt(OffsetDateTime.now(ZoneId.of("Asia/Kolkata")));
 
         // Set active status for new tenant
         tenant.setActive(true);

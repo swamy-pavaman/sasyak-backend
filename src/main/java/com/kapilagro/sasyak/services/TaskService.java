@@ -259,34 +259,38 @@ public class TaskService {
             Optional<User> creator = userRepository.getUserById(task.getCreatedById());
 
             // Notify the task creator if they're not the one updating
-            if (creator.isPresent() && creator.get().getUserId() != userId) {
+            int toSendManagerId;
+            if(creator.isPresent()&& creator.get().getRole().equalsIgnoreCase("manager")){
+                toSendManagerId=creator.get().getUserId();
+            }else{
+                toSendManagerId=creator.get().getManagerId();
+            }
                 // Get implementer's name
-                Optional<User> implementer = userRepository.getUserById(userId);
-                String implementerName = implementer.map(User::getName).orElse("A user");
-
-                notificationService.createTaskImplementationNotification(
+            Optional<User> implementer = userRepository.getUserById(userId);
+            String implementerName = implementer.map(User::getName).orElse("A user");
+            notificationService.createTaskImplementationNotification(
                         task.getTenantId(),
-                        task.getCreatedById(),
+                        toSendManagerId,
                         taskId,
                         "Task Implemented",
                         implementerName + " has implemented the task."
-                );
-            }
+            );
 
-            // If there's a manager for the implementer, notify them too
-            Optional<User> implementer = userRepository.getUserById(userId);
-            if (implementer.isPresent() && implementer.get().getManagerId() != null) {
-                // Get implementer's name
-                String implementerName = implementer.map(User::getName).orElse("A user");
 
-                notificationService.createTaskImplementationNotification(
-                        task.getTenantId(),
-                        implementer.get().getManagerId(),
-                        taskId,
-                        "Task Implemented by Team Member",
-                        implementerName + " has implemented a task."
-                );
-            }
+//            // If there's a manager for the implementer, notify them too
+//            Optional<User> implementer = userRepository.getUserById(userId);
+//            if (implementer.isPresent() && implementer.get().getManagerId() != null) {
+//                // Get implementer's name
+//                String implementerName = implementer.map(User::getName).orElse("A user");
+//
+//                notificationService.createTaskImplementationNotification(
+//                        task.getTenantId(),
+//                        implementer.get().getManagerId(),
+//                        taskId,
+//                        "Task Implemented by Team Member",
+//                        implementerName + " has implemented a task."
+//                );
+//            }
         }
 
         return updated;

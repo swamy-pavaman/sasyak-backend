@@ -15,6 +15,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,11 +35,10 @@ public class CatalogRepo {
                     .category(rs.getString("category"))
                     .value(rs.getString("value"))
                     .details(rs.getString("details"))
-                    .tenantId((UUID) rs.getObject("tenant_id"))  // Fixed: Use getObject for UUID
+                    .tenantId((UUID) rs.getObject("tenant_id"))
                     .createdBy(rs.getInt("created_by"))
-                    .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
-                    .updatedAt(rs.getTimestamp("updated_at") != null ?
-                            rs.getTimestamp("updated_at").toLocalDateTime() : null)
+                    .createdAt(rs.getObject("created_at", OffsetDateTime.class))
+                    .updatedAt(rs.getObject("updated_at", OffsetDateTime.class))  // ✅ Updated here
                     .build();
         }
     };

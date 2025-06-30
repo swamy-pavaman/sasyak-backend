@@ -1,11 +1,13 @@
 package com.kapilagro.sasyak.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Data
@@ -19,8 +21,12 @@ public class TaskDTO {
     private String status;
     private String createdBy; // Name of person who created
     private String assignedTo; // Name of person assigned to (if any)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Kolkata")
+    private OffsetDateTime createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Kolkata")
+    private OffsetDateTime updatedAt;
     private String detailsJson;
     private String imagesJson;
     private String implementationJson;
